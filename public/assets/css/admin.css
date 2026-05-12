@@ -122,7 +122,7 @@ details.json-section[open] summary{ margin-bottom: 12px; border-bottom: 1px dash
 .al.ok{ background: #e7f4ec; color: #1f6e3a; }
 .al.err{ background: #fbe4e1; color: #9d2820; }
 
-.inline-form{ display:flex; flex-wrap: wrap; gap: 8px; align-items:flex-start; background:#fff; border:1px dashed #d6cfb6; border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
+.inline-form{ display:flex; flex-wrap: wrap; gap: 8px; align-items:flex-start; background:#fff; border:1px dashed #d6cfb6; border-radius: 12px; padding: 10px 12px; margin-top: 10px; justify-content: flex-start; align-items: center;}
 .inline-form input, .inline-form select, .inline-form textarea{ padding: 8px 10px; border: 1px solid #e0d9c5; border-radius: 8px; font-size: 13px; background: #faf7f1; }
 .inline-form textarea{ min-width: 260px; font-family: inherit; resize: vertical; }
 .inline-form .cb{ display:flex; align-items:center; gap: 4px; font-size: 13px; }
@@ -209,7 +209,8 @@ details.json-section[open] summary{ margin-bottom: 12px; border-bottom: 1px dash
 /* ── Segmented Control ──────────────────────────────────── */
 .seg-ctrl{
   display:inline-flex; border:1px solid #e0d9c5; border-radius:10px;
-  overflow:hidden; background:#faf7f1; align-self:flex-start;
+  overflow:hidden; background:#faf7f1; 
+  /* align-self:flex-start; */
 }
 .seg-ctrl input[type=radio]{ display:none; }
 .seg-ctrl label.seg-opt{
