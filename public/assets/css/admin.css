@@ -255,3 +255,110 @@ code{ background: #faf6ec; padding: 1px 6px; border-radius: 4px; }
   .side-bottom{ flex-direction: column; gap: 4px; font-size: 11px; }
   .form-grid{ grid-template-columns: 1fr; }
 }
+
+/* ── Leads: Row checkboxes ──────────────────────────────── */
+.th-chk, .td-chk{ width: 38px; text-align:center; }
+.cb-row{
+  display:inline-flex; align-items:center; justify-content:center;
+  cursor:pointer; margin:0;
+}
+.cb-row input[type=checkbox]{ display:none; }
+.chk-box{
+  width:18px; height:18px; border:2px solid #c9c0a7; border-radius:5px;
+  background:#faf7f1; flex-shrink:0; position:relative;
+  transition:background .15s,border-color .15s;
+  display:flex; align-items:center; justify-content:center;
+}
+.cb-row input[type=checkbox]:checked ~ .chk-box,
+.cb-row input[type=checkbox]:indeterminate ~ .chk-box{
+  background:var(--accent); border-color:var(--accent);
+}
+.cb-row input[type=checkbox]:checked ~ .chk-box::after{
+  content:''; position:absolute;
+  left:3px; top:0px; width:6px; height:10px;
+  border:2px solid #fff; border-top:0; border-left:0;
+  transform:rotate(45deg);
+}
+.cb-row input[type=checkbox]:indeterminate ~ .chk-box::after{
+  content:''; position:absolute;
+  left:3px; top:6px; width:8px; height:2px;
+  background:#fff; border:0;
+}
+tr.row-selected td{
+  background: #fff8ec;
+}
+
+/* ── Bulk toolbar ───────────────────────────────────────── */
+.bulk-bar{
+  display:none; align-items:center; gap:10px;
+  background:#1a1a1a; color:#fff;
+  border-radius:12px; padding:10px 18px; margin-bottom:10px;
+  animation:slideDown .2s ease;
+}
+.bulk-bar.visible{ display:flex; }
+@keyframes slideDown{ from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+.bulk-count{ font-size:14px; font-weight:600; }
+.btn-del-bulk{
+  display:inline-flex; align-items:center; gap:7px;
+  background:#b3261e; color:#fff; border:0;
+  padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700;
+  cursor:pointer; transition:background .15s;
+}
+.btn-del-bulk:hover{ background:#8f1e19; }
+.bulk-clear{
+  background:transparent; border:1px solid rgba(255,255,255,.3);
+  color:#ddd; padding:8px 14px; border-radius:8px; font-size:13px;
+  cursor:pointer; transition:border-color .15s,color .15s; margin-inline-start:auto;
+}
+.bulk-clear:hover{ border-color:#fff; color:#fff; }
+
+/* ── Delete Confirm Modal ───────────────────────────────── */
+.del-modal-bg{
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,.5); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;
+}
+.del-modal-bg.open{ display:flex; animation:fadeIn .18s ease; }
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+
+.del-modal{
+  background:#fff; border-radius:18px; padding:32px 28px 24px;
+  width:100%; max-width:400px; text-align:center;
+  box-shadow: 0 24px 80px rgba(0,0,0,.22);
+  animation:scaleIn .2s cubic-bezier(.34,1.4,.64,1);
+}
+@keyframes scaleIn{ from{transform:scale(.88);opacity:0} to{transform:scale(1);opacity:1} }
+
+.del-modal-icon{
+  width:64px; height:64px; border-radius:50%;
+  background:#fbe4e1; display:flex; align-items:center; justify-content:center;
+  margin:0 auto 16px; color:#b3261e;
+}
+.del-modal-icon svg{ width:30px; height:30px; }
+
+.del-modal h3{
+  margin:0 0 10px; font-family:'Playfair Display',serif;
+  font-size:20px; color:#1a1a1a;
+}
+.del-modal p{
+  margin:0 0 24px; font-size:14px; color:#6a6258; line-height:1.6;
+}
+
+.del-modal-actions{
+  display:flex; gap:10px; justify-content:center;
+}
+.del-modal-cancel{
+  flex:1; padding:11px 0; border:1px solid #e0d9c5; border-radius:10px;
+  background:#faf7f1; color:#4a4a4a; font-size:14px; font-weight:600;
+  cursor:pointer; transition:background .15s;
+}
+.del-modal-cancel:hover{ background:#f0e9d4; }
+
+.del-modal-confirm{
+  flex:1; padding:11px 0; border:0; border-radius:10px;
+  background:#b3261e; color:#fff; font-size:14px; font-weight:700;
+  cursor:pointer; transition:background .15s;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+}
+.del-modal-confirm:hover{ background:#8f1e19; }
+.del-modal-confirm svg{ flex-shrink:0; }
