@@ -159,6 +159,7 @@ if (count($firstTwo) >= 2) {
 
     <button type="submit" class="btn-buy"><?= e($ctaTxt) ?></button>
     <p class="form-foot">بالضغط على الزر، سيتواصل معك فريقنا لتأكيد الطلب قبل الشحن — الدفع عند الاستلام.</p>
+    <div id="formError" class="form-error" role="alert" hidden></div>
   </form>
 </section>
 

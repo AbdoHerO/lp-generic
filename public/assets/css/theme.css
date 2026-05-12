@@ -52,7 +52,12 @@ button{ font-family: inherit; cursor: pointer; }
 .ftr-tag{ color: #aea899; font-size: 14px; }
 .ftr-nav{ display:flex; flex-direction:column; gap: 8px; }
 .ftr-nav a{ color: #d8d2c2; font-size: 14px; }
-.ftr-contact{ display:flex; flex-direction:column; gap:8px; font-size:14px; }
+.ftr-contact{ display:flex; flex-direction:column; gap:10px; font-size:14px; }
+.ftr-link{ display:inline-flex; align-items:center; gap:8px; color:#d8d2c2; padding:8px 12px; background:#262626; border:1px solid #2f2f2f; border-radius:10px; transition: background .15s, color .15s, border-color .15s; width:max-content; max-width:100%; }
+.ftr-link:hover{ background:#333; color:#fff; border-color:#444; }
+.ftr-link svg{ flex:none; }
+.ftr-link.wa{ background:#16a34a; border-color:#16a34a; color:#fff; }
+.ftr-link.wa:hover{ background:#15803d; border-color:#15803d; }
 .ftr-bottom{ border-top: 1px solid #2a2a2a; padding: 14px 18px; font-size: 12px; color: #8a8276; text-align:center; }
 @media (max-width: 720px){ .ftr{ grid-template-columns: 1fr; gap: 18px; } }
 

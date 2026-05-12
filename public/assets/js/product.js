@@ -159,17 +159,80 @@
 
   /* ---------- Form validation + submit ---------- */
   const form = document.getElementById('leadForm');
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      if (!offerInput.value) { e.preventDefault(); alert('الرجاء اختيار عرض'); return; }
+  const errBox = document.getElementById('formError');
 
-      // Phone format check (Moroccan): 0[6/7]XXXXXXXX
-      const phone = form.querySelector('input[name=phone]');
-      if (phone && !/^0[6-7]\d{8}$/.test(phone.value.trim())) {
+  function showError(msg, focusEl) {
+    if (errBox) {
+      errBox.textContent = msg;
+      errBox.hidden = false;
+      errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      alert(msg);
+    }
+    if (focusEl) {
+      focusEl.classList.add('has-err');
+      setTimeout(() => focusEl.focus({ preventScroll: true }), 250);
+    }
+  }
+  function clearError() {
+    if (errBox) { errBox.textContent = ''; errBox.hidden = true; }
+    form?.querySelectorAll('.has-err').forEach(el => el.classList.remove('has-err'));
+  }
+
+  if (form) {
+    // Live: clear "has-err" once the user touches the field
+    form.addEventListener('input', e => {
+      if (e.target.classList?.contains('has-err')) e.target.classList.remove('has-err');
+    });
+    form.addEventListener('change', e => {
+      if (e.target.classList?.contains('has-err')) e.target.classList.remove('has-err');
+    });
+
+    form.addEventListener('submit', (e) => {
+      clearError();
+
+      // 1) Offer chosen
+      if (!offerInput.value) {
         e.preventDefault();
-        alert('رقم الهاتف غير صحيح. مثال: 0612345678');
-        phone.focus();
-        return;
+        return showError('الرجاء اختيار عرض من القائمة');
+      }
+      const offer = D.offers.find(o => o.id === Number(offerInput.value));
+
+      // 2) Per-unit option groups (only inside active offer)
+      if (offer && offer.requires_options === 1) {
+        const activeCard = document.querySelector('.offer.active');
+        if (activeCard) {
+          const selects = activeCard.querySelectorAll('select[required], input[required][type=text]');
+          for (const sel of selects) {
+            if (!sel.value) {
+              e.preventDefault();
+              const groupName = sel.dataset.group || '';
+              const m = sel.name.match(/_(\d+)$/);
+              const unitIdx = m ? m[1] : '?';
+              const label = groupName === 'color' ? 'اللون' : (groupName === 'size' ? 'المقاس' : 'الخيار');
+              return showError(`الرجاء اختيار ${label} للوحدة رقم ${unitIdx}`, sel);
+            }
+          }
+        }
+      }
+
+      // 3) Customer fields
+      const fullname = form.querySelector('input[name=fullname]');
+      if (!fullname.value || fullname.value.trim().length < 3) {
+        e.preventDefault();
+        return showError('الرجاء إدخال الاسم الكامل (3 أحرف على الأقل)', fullname);
+      }
+
+      const phone = form.querySelector('input[name=phone]');
+      if (!/^0[6-7]\d{8}$/.test(phone.value.trim())) {
+        e.preventDefault();
+        return showError('رقم الهاتف غير صحيح. مثال: 0612345678', phone);
+      }
+
+      const address = form.querySelector('input[name=address]');
+      if (!address.value || address.value.trim().length < 5) {
+        e.preventDefault();
+        return showError('الرجاء إدخال العنوان الكامل', address);
       }
 
       // Disable button to prevent double-submit
