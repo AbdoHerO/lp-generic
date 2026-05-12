@@ -124,28 +124,48 @@ class Lead {
         if (!$url) return;
         $token = settings_get('sheetdb_token');
 
-        $optsFlat = [];
-        foreach ($items as $i => $it) {
+        // Extract colors and sizes from items (matching old api2.js column structure)
+        $colors = [];
+        $sizes  = [];
+        foreach ($items as $it) {
             $opts = json_decode($it['options_json'] ?? '{}', true) ?: [];
-            $parts = [];
-            foreach ($opts as $k => $v) $parts[] = $k . ':' . $v;
-            $optsFlat[] = '#' . ($i + 1) . ' ' . implode(' / ', $parts);
+            if (!empty($opts['color'])) $colors[] = $opts['color'];
+            if (!empty($opts['size']))  $sizes[]  = $opts['size'];
         }
+        $colorsString = implode(', ', $colors);
+        $sizesString  = implode(', ', $sizes);
+
+        // Detect traffic source (matches old hasFbclidParameter logic)
+        $trafic = 'Organique';
+        if (!empty($lead['fbclid'])) $trafic = 'Facebook';
+        elseif (!empty($lead['ttclid'])) $trafic = 'Tiktok';
+        elseif (!empty($lead['gclid'])) $trafic = 'Google Ads';
+        elseif (!empty($lead['utm_source'])) $trafic = $lead['utm_source'];
+
+        // Format date like the old JS: "12/05/2026 à 12:22:59"
+        $dt = new DateTime($lead['created_at'] ?? 'now');
+        $createdAt = $dt->format('d/m/Y') . ' à ' . $dt->format('H:i:s');
+
         $payload = ['data' => [[
-            'lead_id'     => $lead['id'],
-            'created_at'  => $lead['created_at'],
-            'product'     => $lead['product_slug'],
-            'offer'       => $lead['offer_label'],
-            'quantity'    => $lead['quantity'],
-            'total_price' => $lead['total_price'],
-            'fullname'    => $lead['fullname'],
-            'phone'       => $lead['phone'],
-            'city'        => $lead['city'],
-            'address'     => $lead['address'],
-            'notes'       => $lead['notes'],
-            'options'     => implode(' | ', $optsFlat),
-            'source'      => $lead['source'],
-            'status'      => $lead['status'],
+            // ── Columns matching the existing Google Sheet ──────────────
+            'date'         => $lead['created_at'],
+            'destinataire' => $lead['fullname'],
+            'telephone'    => (string)$lead['phone'],
+            'ville'        => $lead['city'] ?: '-',
+            'adresse'      => $lead['address'],
+            'prix'         => (string)$lead['total_price'],
+            'produit'      => 'Pant-' . $colorsString . '-' . $sizesString,
+            'id_intern'    => '',
+            'change'       => '0',
+            'ouvrir_colis' => '1',
+            'essayage'     => '1',
+            'quantity'     => (string)$lead['quantity'],
+            'color'        => $colorsString,
+            'size'         => $sizesString,
+            'createdAt'    => $createdAt,
+            'montant'      => (string)$lead['total_price'],
+            'status'       => 'en cours',
+            'trafic'       => $trafic,
         ]]];
 
         $ch = curl_init($url);
@@ -156,9 +176,15 @@ class Lead {
             CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
             CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 6,
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_SSL_VERIFYPEER => true,
         ]);
-        @curl_exec($ch);
+        $resp = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+        // Log failure silently (won't break the order flow)
+        if ($httpCode < 200 || $httpCode >= 300) {
+            error_log("SheetDB sync failed: HTTP $httpCode — $resp");
+        }
     }
 }

@@ -14,7 +14,7 @@ INSERT INTO settings (k, v) VALUES
 ('ga_id',''),
 ('sheetdb_enabled','1'),
 ('sheetdb_url','https://sheetdb.io/api/v1/0tjsq029vh1s9'),
-('sheetdb_token',''),
+('sheetdb_token','c4pbl6r3lwr8r0bossphcnv02tpic1dqlp40ifla'),
 ('accent_color','#a07a3c'),
 ('cta_color','#22c55e'),
 ('countdown_hours','25'),
