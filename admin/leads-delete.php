@@ -12,9 +12,8 @@ $ids = array_map('intval', (array)($_POST['ids'] ?? []));
 $ids = array_filter($ids, fn($v) => $v > 0);
 
 if ($ids) {
-    $in  = implode(',', $ids);                       // safe — all are ints
-    $pdo->exec("DELETE FROM lead_units WHERE lead_id IN ($in)");
-    $pdo->exec("DELETE FROM lead_events WHERE lead_id IN ($in)");
+    $in = implode(',', $ids);   // safe — all are cast to int above
+    // lead_items and lead_status_logs cascade automatically (ON DELETE CASCADE)
     $pdo->exec("DELETE FROM leads WHERE id IN ($in)");
 }
 
