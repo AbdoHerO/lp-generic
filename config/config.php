@@ -3,16 +3,16 @@
 return [
     'app' => [
         'name'      => 'متجر تيفاو',
-        'base_url'  => '/lp_tifaw',     // path prefix when site lives in htdocs/lp_tifaw
+        'base_url'  => '/u736495871_casaLux',     // path prefix when site lives in htdocs/lp_tifaw
         'env'       => 'development',   // 'production' to hide errors
         'timezone'  => 'Africa/Casablanca',
     ],
     'db' => [
         'host' => '127.0.0.1',
         'port' => 3306,
-        'name' => 'lp_tifaw',
-        'user' => 'root',
-        'pass' => '',
+        'name' => 'u736495871_casaLux',
+        'user' => 'u736495871_casaLux',
+        'pass' => 'ABDOwahna135795!',
         'charset' => 'utf8mb4',
     ],
     'security' => [
