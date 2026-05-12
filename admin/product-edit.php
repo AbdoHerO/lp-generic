@@ -152,5 +152,5 @@ admin_render('product-edit', [
     'offers'  => $offers,
     'groups'  => $groups,
     'media'   => $media,
-    'msg'     => $msg ?? (isset($_GET['saved']) ? 'تم الحفظ' : null),
+    'msg'     => $msg ?? (isset($_GET['saved']) ? 'تم الحفظ' : (isset($_GET['cloned']) ? 'تم إنشاء نسخة من المنتج. عدّل الحقول ثم فعّل الحالة.' : null)),
 ]);

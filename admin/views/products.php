@@ -1,3 +1,6 @@
+<?php if (isset($_GET['clone_err'])): ?>
+  <div class="notice err">فشل نسخ المنتج. تحقق من السجلات.</div>
+<?php endif; ?>
 <div class="actions">
   <a class="btn" href="<?= base_url('admin/product-edit.php') ?>">+ منتج جديد</a>
 </div>
@@ -15,6 +18,11 @@
   <td>
     <a class="btn-sm" href="<?= base_url('admin/product-edit.php?id=' . $p['id']) ?>">تعديل</a>
     <a class="btn-sm" target="_blank" href="<?= base_url($p['slug'] . '?preview=1') ?>" title="معاينة الصفحة">👁 معاينة</a>
+    <form method="post" action="<?= base_url('admin/product-clone.php') ?>" style="display:inline" onsubmit="return confirm('نسخ هذا المنتج إلى منتج جديد؟')">
+      <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+      <button class="btn-sm" type="submit" title="إنشاء نسخة من هذا المنتج">📋 نسخ</button>
+    </form>
     <form method="post" action="<?= base_url('admin/product-delete.php') ?>" style="display:inline" onsubmit="return confirm('حذف نهائي؟')">
       <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
