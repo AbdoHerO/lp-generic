@@ -37,6 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <label>اسم المستخدم<input name="username" required autofocus></label>
   <label>كلمة المرور<input type="password" name="password" required></label>
   <button class="btn-buy" type="submit">دخول</button>
-  <p class="tip">المستخدم الافتراضي: <code>admin</code> / <code>admin123</code> — قم بتغييره فوراً.</p>
+  <!-- <p class="tip">المستخدم الافتراضي: <code>admin</code> / <code>admin123</code> — قم بتغييره فوراً.</p> -->
 </form>
 </body></html>
