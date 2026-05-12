@@ -1,6 +1,7 @@
 # lp_tifaw public rewrites
 RewriteEngine On
-RewriteBase /lp_tifaw/
+# RewriteBase auto-adapts: '/' on subdomain root, '/lp_tifaw/' on XAMPP subfolder.
+# We use no RewriteBase and rely on the ^ anchor instead — works in both environments.
 
 # Block direct access to source folders
 RewriteRule ^(config|src|sql)/ - [F,L]
