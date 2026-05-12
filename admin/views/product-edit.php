@@ -53,7 +53,44 @@ $sectionsTemplate = '{
       <label>السعر الأساسي <input type="number" step="0.01" name="base_price" value="<?= e($product['base_price'] ?? '0') ?>"></label>
       <label>سعر المقارنة <input type="number" step="0.01" name="compare_price" value="<?= e($product['compare_price'] ?? '') ?>"></label>
     </div>
-    <label>شارات (مفصولة بفاصلة) <input name="badges" value="<?= e($product['badges'] ?? '') ?>"></label>
+    <label>الشارات
+      <div class="tag-input-wrap" id="badgesWrap">
+        <input type="hidden" name="badges" id="badgesHidden" value="<?= e($product['badges'] ?? '') ?>">
+        <input type="text" id="badgesTyping" class="tag-typing-input" placeholder="اكتب شارة واضغط Enter أو فاصلة..." autocomplete="off">
+      </div>
+    </label>
+    <script>
+    (function(){
+      var wrap  = document.getElementById('badgesWrap');
+      var input = document.getElementById('badgesTyping');
+      var hidden= document.getElementById('badgesHidden');
+      function getTags(){ return hidden.value.split(',').map(s=>s.trim()).filter(Boolean); }
+      function setTags(arr){ hidden.value = arr.join(','); }
+      function render(){
+        wrap.querySelectorAll('.tag-chip').forEach(el=>el.remove());
+        getTags().forEach(function(tag){
+          var chip = document.createElement('span');
+          chip.className = 'tag-chip';
+          chip.innerHTML = tag + '<button type="button" class="rm" aria-label="حذف">×</button>';
+          chip.querySelector('.rm').onclick = function(){ setTags(getTags().filter(t=>t!==tag)); render(); };
+          wrap.insertBefore(chip, input);
+        });
+      }
+      function addTag(val){
+        var v = val.trim().replace(/,$/,'').trim();
+        if (!v) return;
+        var tags = getTags();
+        if (!tags.includes(v)) { tags.push(v); setTags(tags); render(); }
+      }
+      input.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(input.value); input.value=''; }
+        if (e.key === 'Backspace' && input.value === '') { var t=getTags(); t.pop(); setTags(t); render(); }
+      });
+      input.addEventListener('blur', function(){ if(input.value.trim()){ addTag(input.value); input.value=''; } });
+      wrap.addEventListener('click', function(){ input.focus(); });
+      render();
+    })();
+    </script>
     <label class="cb"><input type="checkbox" name="status" <?= !empty($product['status']) || !$product ? 'checked':'' ?>> منتج نشط</label>
   </div>
 
@@ -63,13 +100,19 @@ $sectionsTemplate = '{
       <?php if (!empty($product['cover_image'])): ?><img class="thumb" src="<?= e(upload_url($product['cover_image'])) ?>"><?php endif; ?>
       <input type="file" name="cover_image" accept="image/*">
       <span class="or-sep">— أو —</span>
-      <input type="url" name="cover_image_url" placeholder="رابط صورة من متجر آخر: https://..." value="<?= preg_match('#^https?://#', $product['cover_image'] ?? '') ? e($product['cover_image']) : '' ?>">
+      <div class="url-input-wrap">
+        <span class="url-pfx">🔗</span>
+        <input type="url" name="cover_image_url" placeholder="https://..." value="<?= preg_match('#^https?://#', $product['cover_image'] ?? '') ? e($product['cover_image']) : '' ?>">
+      </div>
     </label>
     <label>صورة Open Graph
       <?php if (!empty($product['og_image'])): ?><img class="thumb" src="<?= e(upload_url($product['og_image'])) ?>"><?php endif; ?>
       <input type="file" name="og_image" accept="image/*">
       <span class="or-sep">— أو —</span>
-      <input type="url" name="og_image_url" placeholder="رابط صورة: https://..." value="<?= preg_match('#^https?://#', $product['og_image'] ?? '') ? e($product['og_image']) : '' ?>">
+      <div class="url-input-wrap">
+        <span class="url-pfx">🔗</span>
+        <input type="url" name="og_image_url" placeholder="https://..." value="<?= preg_match('#^https?://#', $product['og_image'] ?? '') ? e($product['og_image']) : '' ?>">
+      </div>
     </label>
     <label>عنوان SEO <input name="seo_title" value="<?= e($product['seo_title'] ?? '') ?>"></label>
     <label>وصف SEO <input name="seo_description" value="<?= e($product['seo_description'] ?? '') ?>"></label>
@@ -215,10 +258,12 @@ $sectionsTemplate = '{
 <form method="post" enctype="multipart/form-data" class="inline-form">
   <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
   <input type="hidden" name="action" value="add_media">
-  <select name="kind">
-    <option value="slider">سلايدر</option>
-    <option value="gallery">معرض</option>
-  </select>
+  <div class="seg-ctrl">
+    <input type="radio" name="kind" id="kind_slider" value="slider" checked>
+    <label for="kind_slider" class="seg-opt">سلايدر</label>
+    <input type="radio" name="kind" id="kind_gallery" value="gallery">
+    <label for="kind_gallery" class="seg-opt">معرض</label>
+  </div>
   <label class="stacked">
     <span>رفع ملفات</span>
     <input type="file" name="media_files[]" multiple accept="image/*">
