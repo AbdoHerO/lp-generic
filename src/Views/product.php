@@ -95,32 +95,6 @@ if (count($firstTwo) >= 2) {
   </div>
 </section>
 
-<?php if ($features): ?>
-<section class="p-features">
-  <h2 class="sec-title" style="text-align:center">لماذا هذا المنتج</h2>
-  <div class="feat-grid">
-    <?php foreach ($features as $f): ?>
-      <div class="feat">
-        <div class="feat-icon"><?= e($f['icon'] ?? '✦') ?></div>
-        <h3><?= e($f['title'] ?? '') ?></h3>
-        <p><?= e($f['text'] ?? '') ?></p>
-      </div>
-    <?php endforeach; ?>
-  </div>
-</section>
-<?php endif; ?>
-
-<?php if ($gallery): ?>
-<section class="p-gallery">
-  <h2 class="sec-title" style="text-align:center">المنتج عن قرب</h2>
-  <div class="gal-grid">
-    <?php foreach ($gallery as $g): ?>
-      <img src="<?= e(upload_url($g['url'])) ?>" loading="lazy" alt="<?= e($product['title']) ?>">
-    <?php endforeach; ?>
-  </div>
-</section>
-<?php endif; ?>
-
 <section class="p-order" id="orderForm">
   <form method="post" action="<?= base_url('lead/submit') ?>" id="leadForm" class="lead-form" novalidate>
     <input type="hidden" name="product_id" value="<?= (int)$product['id'] ?>">
@@ -162,6 +136,32 @@ if (count($firstTwo) >= 2) {
     <div id="formError" class="form-error" role="alert" hidden></div>
   </form>
 </section>
+
+<?php if ($gallery): ?>
+<section class="p-gallery">
+  <h2 class="sec-title" style="text-align:center">المنتج عن قرب</h2>
+  <div class="gal-grid">
+    <?php foreach ($gallery as $g): ?>
+      <img src="<?= e(upload_url($g['url'])) ?>" loading="lazy" alt="<?= e($product['title']) ?>">
+    <?php endforeach; ?>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php if ($features): ?>
+<section class="p-features">
+  <h2 class="sec-title" style="text-align:center">لماذا هذا المنتج</h2>
+  <div class="feat-grid">
+    <?php foreach ($features as $f): ?>
+      <div class="feat">
+        <div class="feat-icon"><?= e($f['icon'] ?? '✦') ?></div>
+        <h3><?= e($f['title'] ?? '') ?></h3>
+        <p><?= e($f['text'] ?? '') ?></p>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</section>
+<?php endif; ?>
 
 <?php if ($tests): ?>
 <section class="p-tests">
