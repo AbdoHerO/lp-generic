@@ -4,7 +4,7 @@ INSERT INTO admins (username, password_hash) VALUES
 ('admin', '$2y$10$31tRbVMWmuJYim/yEFQ9MeHVuLXPCIbTbqhv5t0TG0tkHMtTVg6Mi');
 
 INSERT INTO settings (k, v) VALUES
-('store_name','Pant Classe'),
+('store_name','CasaLux'),
 ('store_logo','https://lucci-moriny.sirv.com/Images/cl-01.jpg'),
 ('whatsapp','+212600000000'),
 ('support_phone','+212600000000'),
