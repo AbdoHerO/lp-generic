@@ -1,0 +1,24 @@
+# lp_tifaw public rewrites
+RewriteEngine On
+RewriteBase /lp_tifaw/
+
+# Block direct access to source folders
+RewriteRule ^(config|src|sql)/ - [F,L]
+
+# Allow real files & directories (assets, uploads, admin folder)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Everything else -> front controller
+RewriteRule ^ index.php [L]
+
+# Basic security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# UTF-8
+AddDefaultCharset UTF-8

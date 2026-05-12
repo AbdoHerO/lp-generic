@@ -1,0 +1,32 @@
+/* ===== Home hero ===== */
+.hero-home{ padding: 50px 18px 20px; text-align:center; }
+.hero-eyebrow{ display:inline-block; padding: 4px 12px; background: var(--sand); color: var(--ink-2); border-radius: 999px; font-size: 12px; letter-spacing: .04em; margin-bottom: 16px; }
+.hero-title{ font-family: var(--serif); font-size: clamp(28px, 5vw, 46px); line-height:1.2; margin: 6px auto 14px; max-width: 780px; }
+.hero-title .accent{ color: var(--accent); }
+.hero-sub{ color: var(--ink-2); max-width: 620px; margin: 0 auto; font-size: 16px; }
+
+/* ===== Categories bar ===== */
+.cat-bar{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; padding: 18px; }
+.cat-bar a{ background: var(--surface); border:1px solid var(--line); padding: 8px 14px; border-radius: 999px; font-size: 14px; color: var(--ink-2); }
+.cat-bar a.active{ background: var(--ink); color:#fff; border-color: var(--ink); }
+
+/* ===== Product grid ===== */
+.product-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; padding: 14px 0 40px; }
+.product-card{
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; transition: transform .2s ease, box-shadow .2s ease, border-color .2s;
+  display:flex; flex-direction:column;
+}
+.product-card:hover{ transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: #d8cfb8; }
+.pc-media{ position: relative; aspect-ratio: 4/5; overflow: hidden; background: var(--sand); }
+.pc-media img{ width:100%; height:100%; object-fit: cover; transition: transform .4s ease; }
+.product-card:hover .pc-media img{ transform: scale(1.04); }
+.pc-badges{ position:absolute; top:10px; right:10px; display:flex; flex-direction:column; gap:6px; }
+.pc-badge{ background: var(--ink); color:#fff; font-size: 11px; padding: 4px 10px; border-radius: 999px; }
+.pc-body{ padding: 14px 16px 18px; display:flex; flex-direction:column; gap:8px; }
+.pc-title{ font-family: var(--serif); font-size: 18px; margin: 0; }
+.pc-hook{ color: var(--ink-2); font-size: 13px; margin: 0; min-height: 36px; }
+.pc-price{ display:flex; gap:10px; align-items:baseline; }
+.pc-price-now{ font-weight: 700; color: var(--accent); }
+.pc-price-old{ color: var(--muted); text-decoration: line-through; font-size: 13px; }
+.pc-cta{ margin-top:6px; color: var(--ink); font-weight: 600; font-size: 14px; align-self: flex-start; border-bottom: 1px solid currentColor; padding-bottom: 2px; }

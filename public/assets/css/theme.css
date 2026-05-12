@@ -1,0 +1,84 @@
+:root{
+  --bg: #faf7f1;          /* warm ivory */
+  --surface: #ffffff;
+  --ink: #1a1a1a;         /* graphite */
+  --ink-2: #4a4a4a;
+  --muted: #8a8276;
+  --line: #e9e3d6;
+  --sand: #efe7d4;
+  --accent: #0e7c7b;      /* muted teal */
+  --accent-2: #0b5e5d;
+  --olive: #5a6b3b;
+  --danger: #b3261e;
+  --success: #2d8a4a;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 6px 24px rgba(20,20,20,.06);
+  --shadow-lg: 0 12px 40px rgba(20,20,20,.10);
+  --container: 1140px;
+  --font: 'Cairo', system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --serif: 'Playfair Display', 'Cairo', serif;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--bg);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img{ max-width:100%; display:block; }
+a{ color: inherit; text-decoration: none; }
+button{ font-family: inherit; cursor: pointer; }
+.container{ width: 100%; max-width: var(--container); margin: 0 auto; padding: 0 18px; }
+
+/* ===== Header ===== */
+.site-header{ background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top:0; z-index: 50; }
+.hdr{ display:flex; align-items:center; gap: 14px; padding: 12px 18px; }
+.brand{ display:flex; align-items:center; gap:8px; font-weight:800; font-size: 18px; }
+.brand-mark{ color: var(--accent); font-size: 20px; }
+.brand-name{ font-family: var(--serif); }
+.search{ flex:1; display:flex; align-items:center; background: var(--bg); border:1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
+.search input{ flex:1; border:0; background: transparent; padding: 8px 6px; font-family: inherit; font-size: 14px; outline: none; }
+.search button{ background: transparent; border:0; font-size: 18px; color: var(--ink-2); }
+.hdr-cta{ background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.trust-strip{ background: var(--ink); color: #f3ead7; font-size: 12px; display:flex; gap: 24px; justify-content: center; padding: 8px 12px; flex-wrap:wrap; }
+
+/* ===== Footer ===== */
+.site-footer{ margin-top: 64px; background: #1a1a1a; color: #d8d2c2; }
+.ftr{ display:grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; padding: 36px 18px; }
+.ftr-tag{ color: #aea899; font-size: 14px; }
+.ftr-nav{ display:flex; flex-direction:column; gap: 8px; }
+.ftr-nav a{ color: #d8d2c2; font-size: 14px; }
+.ftr-contact{ display:flex; flex-direction:column; gap:8px; font-size:14px; }
+.ftr-bottom{ border-top: 1px solid #2a2a2a; padding: 14px 18px; font-size: 12px; color: #8a8276; text-align:center; }
+@media (max-width: 720px){ .ftr{ grid-template-columns: 1fr; gap: 18px; } }
+
+/* ===== Buttons ===== */
+.btn-buy{
+  display:inline-block; width:100%; text-align:center;
+  background: var(--accent); color:#fff; border:0; border-radius: 12px;
+  padding: 16px 22px; font-weight: 700; font-size: 16px;
+  box-shadow: 0 8px 22px rgba(14,124,123,.25);
+  transition: transform .15s ease, background .15s ease;
+}
+.btn-buy:hover{ background: var(--accent-2); transform: translateY(-1px); }
+
+/* ===== Messages ===== */
+.msg-page{ padding: 60px 18px; }
+.msg-card{ max-width: 560px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 36px; text-align: center; box-shadow: var(--shadow); }
+.msg-card h1{ font-family: var(--serif); margin: 8px 0 6px; }
+.msg-icon{ width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; display:grid; place-items:center; font-size: 28px; font-weight: 800; background: #e7f4ec; color: var(--success); }
+.msg-card.error .msg-icon{ background: #fbe9e7; color: var(--danger); }
+.msg-actions{ margin-top: 18px; }
+
+/* ===== Policy ===== */
+.policy{ padding: 30px 18px 60px; }
+.policy-body{ background: var(--surface); border:1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+
+/* ===== Section title ===== */
+.sec-title{ font-family: var(--serif); font-size: 24px; margin: 30px 0 16px; }
+.sec-title.sm{ font-size: 18px; margin: 18px 0 10px; }
+.empty{ text-align:center; color: var(--muted); padding: 40px 0; }
