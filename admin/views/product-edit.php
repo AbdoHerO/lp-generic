@@ -136,6 +136,7 @@ $sectionsTemplate = '{
 
 <section id="offers">
 <h2 class="sec-title">العروض</h2>
+<div class="tbl-wrap">
 <table class="tbl">
 <thead><tr><th>العنوان</th><th>الكمية</th><th>السعر</th><th>سعر المقارنة</th><th>افتراضي</th><th>موصى به</th><th>شحن مجاني</th><th>اختيارات؟</th><th></th></tr></thead>
 <tbody>
@@ -161,6 +162,7 @@ $sectionsTemplate = '{
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>
 
 <form method="post" class="inline-form">
   <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
@@ -258,12 +260,25 @@ $sectionsTemplate = '{
 <form method="post" enctype="multipart/form-data" class="inline-form">
   <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
   <input type="hidden" name="action" value="add_media">
-  <div class="seg-ctrl">
-    <input type="radio" name="kind" id="kind_slider" value="slider" checked>
-    <label for="kind_slider" class="seg-opt">سلايدر</label>
-    <input type="radio" name="kind" id="kind_gallery" value="gallery">
-    <label for="kind_gallery" class="seg-opt">معرض</label>
-  </div>
+  <label class="stacked" style="width:100%">
+    <span>نوع الصورة</span>
+    <div class="kind-cards">
+      <label class="kind-card">
+        <input type="radio" name="kind" value="slider" checked>
+        <span class="kc-check">✓</span>
+        <span class="kc-icon">🖼️</span>
+        <span class="kc-title">سلايدر</span>
+        <span class="kc-desc">صور رئيسية تظهر في الواجهة</span>
+      </label>
+      <label class="kind-card">
+        <input type="radio" name="kind" value="gallery">
+        <span class="kc-check">✓</span>
+        <span class="kc-icon">🗂️</span>
+        <span class="kc-title">معرض</span>
+        <span class="kc-desc">صور إضافية في وصف المنتج</span>
+      </label>
+    </div>
+  </label>
   <label class="stacked">
     <span>رفع ملفات</span>
     <input type="file" name="media_files[]" multiple accept="image/*">

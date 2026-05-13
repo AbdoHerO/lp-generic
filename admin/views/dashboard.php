@@ -7,6 +7,7 @@
 </div>
 
 <h2 class="sec-title">آخر الطلبات</h2>
+<div class="tbl-wrap">
 <table class="tbl">
 <thead><tr><th>#</th><th>العميل</th><th>الهاتف</th><th>المنتج</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th><th></th></tr></thead>
 <tbody>
@@ -24,3 +25,4 @@
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>

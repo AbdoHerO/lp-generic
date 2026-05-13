@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="<?= asset('css/admin.css') ?>">
 </head>
 <body class="admin">
-<aside class="side">
+<aside class="side" id="adminSide">
   <div class="side-brand">◆ <?= e($store) ?></div>
   <nav>
     <a href="<?= base_url('admin/index.php') ?>"    class="<?= ($_view==='dashboard'?'active':'') ?>">لوحة التحكم</a>
@@ -20,8 +20,28 @@
     <a href="<?= base_url('admin/logout.php') ?>">خروج</a>
   </div>
 </aside>
+<div class="side-overlay" id="sideOverlay"></div>
 <main class="main">
-  <header class="top"><h1><?= e($title) ?></h1></header>
+  <header class="top">
+    <button type="button" class="side-toggle" id="sideToggle" aria-label="القائمة" aria-controls="adminSide">
+      <span></span><span></span><span></span>
+    </button>
+    <h1><?= e($title) ?></h1>
+  </header>
   <div class="wrap"><?= $content ?></div>
 </main>
+<script>
+(function(){
+  var btn = document.getElementById('sideToggle');
+  var side = document.getElementById('adminSide');
+  var ov = document.getElementById('sideOverlay');
+  if(!btn||!side||!ov) return;
+  function open(){ side.classList.add('open'); ov.classList.add('show'); document.body.classList.add('side-open'); }
+  function close(){ side.classList.remove('open'); ov.classList.remove('show'); document.body.classList.remove('side-open'); }
+  btn.addEventListener('click', function(){ side.classList.contains('open') ? close() : open(); });
+  ov.addEventListener('click', close);
+  side.querySelectorAll('nav a').forEach(function(a){ a.addEventListener('click', close); });
+  window.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
 </body></html>

@@ -4,6 +4,7 @@
 <div class="actions">
   <a class="btn" href="<?= base_url('admin/product-edit.php') ?>">+ منتج جديد</a>
 </div>
+<div class="tbl-wrap">
 <table class="tbl">
 <thead><tr><th>صورة</th><th>المنتج</th><th>الفئة</th><th>السعر</th><th>الحالة</th><th>الرابط</th><th></th></tr></thead>
 <tbody>
@@ -33,3 +34,4 @@
 <?php endforeach; ?>
 </tbody>
 </table>
+</div>

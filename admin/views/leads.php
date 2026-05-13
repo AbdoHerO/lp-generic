@@ -39,6 +39,7 @@
     <button type="button" class="bulk-clear" id="bulkClear">إلغاء التحديد</button>
   </div>
 
+  <div class="tbl-wrap">
   <table class="tbl" id="leadsTable">
   <thead>
     <tr>
@@ -74,6 +75,7 @@
   <?php endforeach; ?>
   </tbody>
   </table>
+  </div>
 </form>
 
 <?php
