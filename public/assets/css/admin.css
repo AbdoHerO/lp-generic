@@ -255,29 +255,43 @@ details.json-section[open] summary{ margin-bottom: 12px; border-bottom: 1px dash
 code{ background: #faf6ec; padding: 1px 6px; border-radius: 4px; }
 
 @media (max-width: 900px){
+  /* 1. Kill flex so the fixed sidebar doesn't steal space */
+  body.admin{ display: block; }
   .side-toggle{ display: inline-flex; }
   .side{
     position: fixed; top: 0; right: 0; bottom: 0;
     width: 260px; min-height: 100vh; height: 100vh;
-    transform: translateX(100%);
+    transform: translateX(110%);   /* 110% = safely off-screen */
     transition: transform .25s ease;
     box-shadow: -8px 0 30px rgba(0,0,0,.25);
+    z-index: 80;
   }
   .side.open{ transform: translateX(0); }
   .side-overlay{ display: block; pointer-events: none; }
   .side-overlay.show{ pointer-events: auto; }
-  .main{ width: 100%; }
+  .main{ display: block; width: 100%; max-width: 100%; min-width: 0; }
   .top{ padding: 12px 14px; position: sticky; top: 0; z-index: 60; }
   .top h1{ font-size: 18px; }
-  .wrap{ padding: 16px 14px; }
+  .wrap{ padding: 16px 14px; overflow-x: hidden; }
   .form-grid{ grid-template-columns: 1fr; gap: 12px; }
   .grp{ padding: 14px; }
   .grp .row2{ grid-template-columns: 1fr; gap: 10px; }
   .lead-detail .grp{ padding: 16px; }
   .filters{ gap: 6px; }
   .filters input, .filters select{ flex: 1 1 140px; min-width: 0; }
-  .page-actions{ padding: 10px 12px; }
+  .page-actions{ padding: 10px 12px; flex-wrap: wrap; }
   .page-actions .btn{ flex: 1 1 auto; text-align: center; }
+  /* 2. Stack inline-forms on tablets too */
+  .inline-form{ flex-direction: column; align-items: stretch; gap: 10px; }
+  .inline-form input:not([type=checkbox]):not([type=radio]):not([type=file]),
+  .inline-form select, .inline-form textarea,
+  .inline-form .stacked, .inline-form .url-input-wrap{ width: 100%; min-width: 0 !important; max-width: 100%; }
+  .inline-form .stacked{ display: flex; flex-direction: column; }
+  .inline-form .stacked input, .inline-form .stacked textarea{ width: 100%; min-width: 0; }
+  .inline-form .or-sep{ align-self: flex-start; }
+  .inline-form .btn{ width: 100%; text-align: center; }
+  .inline-form .cb{ width: auto; }
+  .kind-cards{ grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 600px){
@@ -285,23 +299,20 @@ code{ background: #faf6ec; padding: 1px 6px; border-radius: 4px; }
   .card{ padding: 12px; }
   .c-v{ font-size: 22px; }
   .tbl th, .tbl td{ padding: 8px 10px; font-size: 13px; }
-  .inline-form{ flex-direction: column; align-items: stretch; gap: 10px; }
-  .inline-form input, .inline-form select, .inline-form textarea,
-  .inline-form .stacked, .inline-form .url-input-wrap{ width: 100%; min-width: 0; }
-  .inline-form .stacked{ display: flex; flex-direction: column; }
-  .inline-form .stacked input, .inline-form .stacked textarea{ width: 100%; }
-  .inline-form .btn{ width: 100%; text-align: center; }
   .grp-head{ flex-wrap: wrap; }
   .grp-head form{ margin-inline-start: 0 !important; }
   .status-form{ flex-direction: column; align-items: stretch; }
   .status-form select, .status-form input, .status-form .btn{ width: 100%; }
   .lead-detail .order-card{ padding: 16px; }
   .order-amount{ font-size: 26px; }
-  .actions .btn, .actions .btn-sm{ width: 100%; text-align: center; margin-bottom: 6px; }
+  .actions{ display: flex; flex-direction: column; gap: 6px; }
+  .actions .btn, .actions .btn-sm{ width: 100%; text-align: center; }
   .pager a{ padding: 5px 9px; font-size: 12px; }
   .bulk-bar{ flex-wrap: wrap; padding: 10px 12px; }
   .bulk-clear{ margin-inline-start: 0 !important; }
   .login-card{ margin: 16px; padding: 22px; }
+  .kind-cards{ grid-template-columns: 1fr; }
+  .top h1{ font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 /* Generic input safety */
