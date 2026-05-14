@@ -49,7 +49,11 @@
 /* Gallery */
 .p-gallery { padding: 20px 16px; max-width: var(--container); margin: 0 auto; }
 .gal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.gal-grid img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.gal-grid img { width: 100%; 
+  /* aspect-ratio: 4/5;  */
+  object-fit: cover; 
+  border-radius: 12px; 
+  border: 1px solid var(--line); }
 
 /* ===========================================================
    ORDER FORM  — dashed teal border, black x1/x2/x3 pills, green CTA
