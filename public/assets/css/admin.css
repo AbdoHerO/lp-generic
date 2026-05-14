@@ -239,6 +239,33 @@ details.json-section[open] summary{ margin-bottom: 12px; border-bottom: 1px dash
 .m-card{ background:#fff; border:1px solid #e9e3d6; border-radius: 10px; padding: 8px; text-align:center; font-size: 12px; }
 .m-card img{ width:100%; aspect-ratio:1/1; object-fit: cover; border-radius: 6px; margin-bottom: 6px; }
 
+/* ── Media Section Headers ──────────────────────────────── */
+.media-section-head{ margin-bottom: 14px; }
+.media-section-head .sec-title{ margin: 4px 0 2px; }
+.media-section-badge{
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  margin-bottom: 4px;
+}
+.slider-badge{ background: #e0eef9; color: #1a4f80; }
+.gallery-badge{ background: #e7f4ec; color: #1f6e3a; }
+.media-empty{ padding: 10px 14px; background: #faf6ec; border-radius: 8px; margin-bottom: 14px; }
+
+/* ── Sortable drag-and-drop ──────────────────────────────── */
+.sortable-item{ cursor: default; transition: opacity .15s, box-shadow .15s; }
+.drag-handle{
+  font-size: 20px; color: #c9c0a7; cursor: grab; text-align: center;
+  padding: 0 0 6px; line-height: 1; user-select: none;
+  transition: color .15s;
+}
+.drag-handle:hover{ color: var(--accent); }
+.drag-handle:active{ cursor: grabbing; }
+.sortable-item.dragging{
+  opacity: .35;
+  box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  border: 2px dashed var(--accent) !important;
+}
+
 /* Filters bar */
 .filters{ display:flex; flex-wrap:wrap; gap: 8px; margin-bottom: 14px; }
 .pager{ display:flex; gap: 4px; margin-top: 12px; flex-wrap:wrap; }

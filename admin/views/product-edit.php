@@ -240,45 +240,36 @@ $sectionsTemplate = '{
 
 <hr style="margin:30px 0">
 
-<section id="media">
-<h2 class="sec-title">الصور (سلايدر / معرض)</h2>
+<!-- ══════════════════ SLIDER IMAGES ══════════════════ -->
+<section id="slider">
+<div class="media-section-head">
+  <span class="media-section-badge slider-badge">🖼️ سلايدر</span>
+  <h2 class="sec-title">صور السلايدر</h2>
+  <p class="hint">الصور الرئيسية التي تظهر في واجهة المنتج</p>
+</div>
+<?php $sliderMedia = array_values(array_filter($media, fn($m) => $m['kind'] === 'slider')); ?>
+<?php if ($sliderMedia): ?>
 <div class="media-grid">
-  <?php foreach ($media as $m): ?>
+  <?php foreach ($sliderMedia as $m): ?>
     <div class="m-card">
       <img src="<?= e(upload_url($m['url'])) ?>">
-      <div><?= e($m['kind']) ?></div>
       <form method="post" onsubmit="return confirm('حذف الصورة؟')">
         <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="action" value="del_media">
         <input type="hidden" name="media_id" value="<?= (int)$m['id'] ?>">
+        <input type="hidden" name="media_kind" value="slider">
         <button class="btn-sm danger">حذف</button>
       </form>
     </div>
   <?php endforeach; ?>
 </div>
-
+<?php else: ?>
+<p class="hint media-empty">لا توجد صور للسلايدر بعد.</p>
+<?php endif; ?>
 <form method="post" enctype="multipart/form-data" class="inline-form">
   <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
   <input type="hidden" name="action" value="add_media">
-  <label class="stacked" style="width:100%">
-    <span>نوع الصورة</span>
-    <div class="kind-cards">
-      <label class="kind-card">
-        <input type="radio" name="kind" value="slider" checked>
-        <span class="kc-check">✓</span>
-        <span class="kc-icon">🖼️</span>
-        <span class="kc-title">سلايدر</span>
-        <span class="kc-desc">صور رئيسية تظهر في الواجهة</span>
-      </label>
-      <label class="kind-card">
-        <input type="radio" name="kind" value="gallery">
-        <span class="kc-check">✓</span>
-        <span class="kc-icon">🗂️</span>
-        <span class="kc-title">معرض</span>
-        <span class="kc-desc">صور إضافية في وصف المنتج</span>
-      </label>
-    </div>
-  </label>
+  <input type="hidden" name="kind" value="slider">
   <label class="stacked">
     <span>رفع ملفات</span>
     <input type="file" name="media_files[]" multiple accept="image/*">
@@ -287,8 +278,107 @@ $sectionsTemplate = '{
     <span>أو روابط URL (سطر لكل رابط)</span>
     <textarea name="media_urls" rows="3" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"></textarea>
   </label>
-  <button class="btn">+ إضافة</button>
+  <button class="btn">+ إضافة صور سلايدر</button>
 </form>
 </section>
+
+<hr style="margin:30px 0">
+
+<!-- ══════════════════ GALLERY / BODY IMAGES ══════════════════ -->
+<section id="gallery">
+<div class="media-section-head">
+  <span class="media-section-badge gallery-badge">🗂️ معرض</span>
+  <h2 class="sec-title">صور الجسم (المعرض)</h2>
+  <p class="hint">صور إضافية في وصف المنتج — <strong>اسحب الصور لإعادة ترتيبها</strong></p>
+</div>
+<?php
+  $galleryMedia = array_filter($media, fn($m) => $m['kind'] === 'gallery');
+  usort($galleryMedia, fn($a,$b) => (int)$a['position'] <=> (int)$b['position']);
+  $galleryMedia = array_values($galleryMedia);
+?>
+<?php if ($galleryMedia): ?>
+<div class="media-grid sortable-grid" id="galleryGrid"
+     data-reorder-url="<?= e(base_url('admin/product-edit.php?id=' . (int)$product['id'])) ?>"
+     data-csrf="<?= e(csrf_token()) ?>">
+  <?php foreach ($galleryMedia as $m): ?>
+    <div class="m-card sortable-item" data-id="<?= (int)$m['id'] ?>">
+      <div class="drag-handle" title="اسحب لإعادة الترتيب">⠿</div>
+      <img src="<?= e(upload_url($m['url'])) ?>">
+      <form method="post" onsubmit="return confirm('حذف الصورة؟')">
+        <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="action" value="del_media">
+        <input type="hidden" name="media_id" value="<?= (int)$m['id'] ?>">
+        <input type="hidden" name="media_kind" value="gallery">
+        <button class="btn-sm danger">حذف</button>
+      </form>
+    </div>
+  <?php endforeach; ?>
+</div>
+<?php else: ?>
+<p class="hint media-empty">لا توجد صور للمعرض بعد.</p>
+<?php endif; ?>
+<form method="post" enctype="multipart/form-data" class="inline-form">
+  <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+  <input type="hidden" name="action" value="add_media">
+  <input type="hidden" name="kind" value="gallery">
+  <label class="stacked">
+    <span>رفع ملفات</span>
+    <input type="file" name="media_files[]" multiple accept="image/*">
+  </label>
+  <label class="stacked">
+    <span>أو روابط URL (سطر لكل رابط)</span>
+    <textarea name="media_urls" rows="3" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"></textarea>
+  </label>
+  <button class="btn">+ إضافة صور المعرض</button>
+</form>
+</section>
+
+<script>
+(function(){
+  var grid = document.getElementById('galleryGrid');
+  if (!grid) return;
+  var dragging = null;
+
+  function getItems(){ return Array.from(grid.querySelectorAll('.sortable-item')); }
+
+  function saveOrder(){
+    var ids = getItems().map(function(el){ return el.dataset.id; });
+    var fd  = new FormData();
+    fd.append('_csrf', grid.dataset.csrf);
+    fd.append('action', 'reorder_media');
+    fd.append('ids', JSON.stringify(ids));
+    fetch(grid.dataset.reorderUrl, { method:'POST', body:fd })
+      .catch(function(e){ console.error('Reorder failed', e); });
+  }
+
+  getItems().forEach(function(item){
+    item.setAttribute('draggable', 'true');
+    item.addEventListener('dragstart', function(e){
+      dragging = item;
+      setTimeout(function(){ item.classList.add('dragging'); }, 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', function(){
+      item.classList.remove('dragging');
+      dragging = null;
+      saveOrder();
+    });
+  });
+
+  grid.addEventListener('dragover', function(e){
+    e.preventDefault();
+    if (!dragging) return;
+    var target = e.target.closest('.sortable-item');
+    if (!target || target === dragging) return;
+    var rect = target.getBoundingClientRect();
+    var midX = rect.left + rect.width / 2;
+    if (e.clientX < midX) {
+      grid.insertBefore(dragging, target);
+    } else {
+      grid.insertBefore(dragging, target.nextSibling);
+    }
+  });
+})();
+</script>
 
 <?php endif; ?>

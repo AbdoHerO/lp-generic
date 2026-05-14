@@ -127,16 +127,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add_media' && $product) {
         $files = admin_upload_multi('media_files', 'media_urls');
         $kind  = $_POST['kind'] === 'slider' ? 'slider' : 'gallery';
+        $anchor = $kind === 'slider' ? '#slider' : '#gallery';
+        $posQ = $pdo->prepare("SELECT COALESCE(MAX(position),0) FROM product_media WHERE product_id=:p AND kind=:k");
+        $posQ->execute([':p'=>$product['id'],':k'=>$kind]);
+        $startPos = (int)$posQ->fetchColumn() + 1;
         $st = $pdo->prepare("INSERT INTO product_media (product_id,url,kind,position) VALUES (:p,:u,:k,:po)");
         foreach ($files as $i => $u) {
-            $st->execute([':p'=>$product['id'],':u'=>$u,':k'=>$kind,':po'=>$i]);
+            $st->execute([':p'=>$product['id'],':u'=>$u,':k'=>$kind,':po'=>$startPos+$i]);
         }
-        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . '#media'));
+        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . $anchor));
     }
     if ($action === 'del_media' && $product) {
         $st = $pdo->prepare("DELETE FROM product_media WHERE id=:i AND product_id=:p");
         $st->execute([':i'=>(int)$_POST['media_id'], ':p'=>$product['id']]);
-        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . '#media'));
+        $anchor = ($_POST['media_kind'] ?? '') === 'slider' ? '#slider' : '#gallery';
+        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . $anchor));
+    }
+    if ($action === 'reorder_media' && $product) {
+        $ids = json_decode($_POST['ids'] ?? '[]', true);
+        if (is_array($ids)) {
+            $st = $pdo->prepare("UPDATE product_media SET position=:pos WHERE id=:id AND product_id=:p");
+            foreach ($ids as $pos => $id) {
+                $st->execute([':pos'=>(int)$pos, ':id'=>(int)$id, ':p'=>$product['id']]);
+            }
+        }
+        header('Content-Type: application/json');
+        echo json_encode(['ok'=>true]);
+        exit;
     }
 }
 
