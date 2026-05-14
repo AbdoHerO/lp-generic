@@ -27,6 +27,7 @@
 }
 
 /* Headline / badges / CTA jump */
+.p-headline { margin-top: 1rem; margin-right: 1rem;}
 .p-headline .p-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .p-headline .badge { background: var(--accent); color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 999px; font-weight: 600; }
 .p-title { font-family: var(--serif); color: var(--accent); font-size: clamp(26px, 5vw, 40px); line-height: 1.2; margin: 6px 0 10px; }

@@ -13,7 +13,12 @@
     </label>
     <label>هاتف الدعم <input name="support_phone" value="<?= e($s['support_phone'] ?? '') ?>"></label>
     <label>واتساب <input name="whatsapp" value="<?= e($s['whatsapp'] ?? '') ?>"></label>
+    <label>معرف فيسبوك (handle) <input name="facebook_handle" value="<?= e($s['facebook_handle'] ?? '') ?>"></label>
     <label>اللون المميز <input type="color" name="accent_color" value="<?= e($s['accent_color'] ?? '#0e7c7b') ?>"></label>
+    <h4 style="margin:14px 0 8px;font-size:13px;color:#6a6258;">إظهار أزرار التذييل</h4>
+    <label class="cb"><input type="checkbox" name="show_footer_phone" <?= ($s['show_footer_phone'] ?? '1')==='1'?'checked':'' ?>> إظهار زر الهاتف</label>
+    <label class="cb"><input type="checkbox" name="show_footer_whatsapp" <?= ($s['show_footer_whatsapp'] ?? '1')==='1'?'checked':'' ?>> إظهار زر واتساب</label>
+    <label class="cb"><input type="checkbox" name="show_footer_facebook" <?= ($s['show_footer_facebook'] ?? '1')==='1'?'checked':'' ?>> إظهار زر فيسبوك</label>
   </div>
 
   <div class="grp">
