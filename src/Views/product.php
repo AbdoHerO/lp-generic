@@ -235,3 +235,44 @@ if (count($firstTwo) >= 2) {
     groups: <?= json_encode($jsGroups, JSON_UNESCAPED_UNICODE) ?>
   };
 </script>
+<script>
+(function(){
+  /* ── Disable right-click context menu ── */
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+  /* ── Disable devtools keyboard shortcuts ── */
+  document.addEventListener('keydown', function(e){
+    // F12
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    // Ctrl/Cmd + Shift + I / J / C  (inspector, console, element picker)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && /^[IJC]$/i.test(e.key)) { e.preventDefault(); return false; }
+    // Ctrl/Cmd + U  (view source)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'u') { e.preventDefault(); return false; }
+    // Ctrl/Cmd + S  (save page)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); return false; }
+    // Ctrl/Cmd + P  (print / inspect)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); return false; }
+  });
+
+  /* ── Disable copy / cut outside form inputs ── */
+  ['copy','cut'].forEach(function(ev){
+    document.addEventListener(ev, function(e){
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+    });
+  });
+
+  /* ── Disable image drag-save ── */
+  document.addEventListener('dragstart', function(e){
+    if (e.target && e.target.tagName === 'IMG') e.preventDefault();
+  });
+
+  /* ── Disable long-press text selection on touch (image areas) ── */
+  document.addEventListener('selectstart', function(e){
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    e.preventDefault();
+  });
+})();
+</script>

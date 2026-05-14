@@ -19,6 +19,12 @@
 .p-dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; gap: 6px; justify-content: center; }
 .p-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.55); cursor: pointer; }
 .p-dot.active { background: #fff; transform: scale(1.25); }
+/* Mobile: show full image without cropping */
+@media (max-width: 880px) {
+  .p-hero-inner { padding: 0; gap: 0; }
+  .p-slider { border-radius: 0; aspect-ratio: 1/1; box-shadow: none; }
+  .p-slide { object-fit: contain; object-position: center center; }
+}
 
 /* Headline / badges / CTA jump */
 .p-headline .p-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
