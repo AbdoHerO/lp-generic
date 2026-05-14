@@ -49,24 +49,24 @@ class Lead {
         $where = "1=1";
         $params = [];
         if (!empty($filters['phone'])) {
-            $where .= " AND phone LIKE :phone"; $params[':phone'] = '%' . $filters['phone'] . '%';
+            $where .= " AND l.phone LIKE :phone"; $params[':phone'] = '%' . $filters['phone'] . '%';
         }
         if (!empty($filters['status'])) {
-            $where .= " AND status = :status"; $params[':status'] = $filters['status'];
+            $where .= " AND l.status = :status"; $params[':status'] = $filters['status'];
         }
         if (!empty($filters['product_id'])) {
-            $where .= " AND product_id = :pid"; $params[':pid'] = (int)$filters['product_id'];
+            $where .= " AND l.product_id = :pid"; $params[':pid'] = (int)$filters['product_id'];
         }
         if (!empty($filters['source'])) {
-            $where .= " AND source = :src"; $params[':src'] = $filters['source'];
+            $where .= " AND l.source = :src"; $params[':src'] = $filters['source'];
         }
         if (!empty($filters['from'])) {
-            $where .= " AND created_at >= :from"; $params[':from'] = $filters['from'] . ' 00:00:00';
+            $where .= " AND l.created_at >= :from"; $params[':from'] = $filters['from'] . ' 00:00:00';
         }
         if (!empty($filters['to'])) {
-            $where .= " AND created_at <= :to";   $params[':to']   = $filters['to']   . ' 23:59:59';
+            $where .= " AND l.created_at <= :to";   $params[':to']   = $filters['to']   . ' 23:59:59';
         }
-        $countSt = db()->prepare("SELECT COUNT(*) FROM leads WHERE $where");
+        $countSt = db()->prepare("SELECT COUNT(*) FROM leads l LEFT JOIN products p ON p.id = l.product_id WHERE $where");
         $countSt->execute($params);
         $total = (int)$countSt->fetchColumn();
 
