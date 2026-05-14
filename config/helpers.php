@@ -30,7 +30,10 @@ function base_url(string $path = ''): string {
 }
 
 function asset(string $path): string {
-    return base_url('public/assets/' . ltrim($path, '/'));
+    $rel  = 'public/assets/' . ltrim($path, '/');
+    $file = __DIR__ . '/../' . $rel;
+    $v    = file_exists($file) ? filemtime($file) : 1;
+    return base_url($rel) . '?v=' . $v;
 }
 
 function upload_url(string $path): string {
