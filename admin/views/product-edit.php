@@ -246,27 +246,52 @@
   مستويات السعر التي يختار منها الزائر. اجعل عرضاً واحداً «افتراضي» ليكون محدداً عند فتح الصفحة،
   وواحداً «موصى به» ليظهر بشارة «الأفضل».
 </p>
+<?php $justSaved = (int)($_GET['offer_saved'] ?? 0); ?>
 <div class="tbl-wrap">
-<table class="tbl">
-<thead><tr><th>العنوان</th><th>الكمية</th><th>السعر</th><th>سعر المقارنة</th><th>افتراضي</th><th>موصى به</th><th>شحن مجاني</th><th>اختيارات؟</th><th></th></tr></thead>
+<table class="tbl offers-tbl">
+<thead><tr>
+  <th>العنوان</th><th>الكمية</th><th>السعر</th><th>سعر المقارنة</th>
+  <th>ترتيب</th><th>افتراضي</th><th>موصى به</th><th>شحن مجاني</th><th>اختيارات؟</th><th></th>
+</tr></thead>
 <tbody>
-<?php foreach ($offers as $o): ?>
-<tr>
+<?php if (!$offers): ?>
+  <tr><td colspan="10" class="empty-row">لا توجد عروض بعد — أضف واحداً أسفله. بدون عرض بسعر لا يمكن إتمام أي طلب.</td></tr>
+<?php endif; ?>
+<?php foreach ($offers as $o): $oid = (int)$o['id']; ?>
+
+<!-- display row -->
+<tr class="offer-row <?= $justSaved === $oid ? 'just-saved' : '' ?>" data-offer-view="<?= $oid ?>">
   <td><?= e($o['label']) ?></td>
   <td><?= (int)$o['quantity'] ?></td>
-  <td><?= number_format((float)$o['total_price'],2) ?></td>
-  <td><?= $o['compare_price'] !== null ? number_format((float)$o['compare_price'],2) : '-' ?></td>
+  <td><strong><?= number_format((float)$o['total_price'],2) ?></strong></td>
+  <td><?= $o['compare_price'] !== null ? number_format((float)$o['compare_price'],2) : '—' ?></td>
+  <td><?= (int)($o['position'] ?? 0) ?></td>
   <td><?= $o['is_default']?'✓':'' ?></td>
   <td><?= $o['is_recommended']?'✓':'' ?></td>
   <td><?= $o['free_shipping']?'✓':'' ?></td>
   <td><?= $o['requires_options']?'✓':'' ?></td>
-  <td>
-    <form method="post" style="display:inline" onsubmit="return confirm('حذف العرض؟')">
-      <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="action" value="del_offer">
-      <input type="hidden" name="offer_id" value="<?= (int)$o['id'] ?>">
-      <button class="btn-sm danger">حذف</button>
-    </form>
+  <td class="row-actions">
+    <button type="button" class="btn-sm" data-edit-offer="<?= $oid ?>">تعديل</button>
+    <button type="button" class="btn-sm danger" data-del-offer="<?= $oid ?>"
+            data-label="<?= e($o['label']) ?>">حذف</button>
+  </td>
+</tr>
+
+<!-- edit row. The inputs use form= to reach a <form> outside the table: a
+     <form> cannot legally wrap a set of <td>s. -->
+<tr class="offer-edit" data-offer-edit="<?= $oid ?>" hidden>
+  <td><input form="offerForm<?= $oid ?>" name="label" value="<?= e($o['label']) ?>" required maxlength="160"></td>
+  <td><input form="offerForm<?= $oid ?>" name="quantity" type="number" min="1" value="<?= (int)$o['quantity'] ?>" required class="w-xs"></td>
+  <td><input form="offerForm<?= $oid ?>" name="total_price" type="number" step="0.01" min="0" value="<?= e($o['total_price']) ?>" required class="w-sm"></td>
+  <td><input form="offerForm<?= $oid ?>" name="compare_price" type="number" step="0.01" min="0" value="<?= e($o['compare_price']) ?>" class="w-sm" placeholder="—"></td>
+  <td><input form="offerForm<?= $oid ?>" name="position" type="number" value="<?= (int)($o['position'] ?? 0) ?>" class="w-xs"></td>
+  <td><label class="cb-row"><input form="offerForm<?= $oid ?>" type="checkbox" name="is_default" <?= $o['is_default']?'checked':'' ?>><span class="chk-box"></span></label></td>
+  <td><label class="cb-row"><input form="offerForm<?= $oid ?>" type="checkbox" name="is_recommended" <?= $o['is_recommended']?'checked':'' ?>><span class="chk-box"></span></label></td>
+  <td><label class="cb-row"><input form="offerForm<?= $oid ?>" type="checkbox" name="free_shipping" <?= $o['free_shipping']?'checked':'' ?>><span class="chk-box"></span></label></td>
+  <td><label class="cb-row"><input form="offerForm<?= $oid ?>" type="checkbox" name="requires_options" <?= $o['requires_options']?'checked':'' ?>><span class="chk-box"></span></label></td>
+  <td class="row-actions">
+    <button class="btn-sm primary" form="offerForm<?= $oid ?>">حفظ</button>
+    <button type="button" class="btn-sm" data-cancel-offer="<?= $oid ?>">إلغاء</button>
   </td>
 </tr>
 <?php endforeach; ?>
@@ -274,6 +299,22 @@
 </table>
 </div>
 
+<?php /* One form per offer, outside the table, targeted by the inputs above. */ ?>
+<?php foreach ($offers as $o): ?>
+  <form method="post" id="offerForm<?= (int)$o['id'] ?>" class="offer-form">
+    <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+    <input type="hidden" name="action" value="edit_offer">
+    <input type="hidden" name="offer_id" value="<?= (int)$o['id'] ?>">
+  </form>
+<?php endforeach; ?>
+
+<form method="post" id="offerDeleteForm" class="offer-form">
+  <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+  <input type="hidden" name="action" value="del_offer">
+  <input type="hidden" name="offer_id" id="offerDeleteId">
+</form>
+
+<h4 class="sub-title">إضافة عرض جديد</h4>
 <form method="post" class="inline-form">
   <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
   <input type="hidden" name="action" value="add_offer">
@@ -288,6 +329,74 @@
   <label class="cb"><input type="checkbox" name="requires_options" checked> يتطلب اختيارات</label>
   <button class="btn">+ إضافة عرض</button>
 </form>
+
+<script>
+(function () {
+  var section = document.getElementById('offers');
+  if (!section) return;
+
+  function row(kind, id) { return section.querySelector('[data-offer-' + kind + '="' + id + '"]'); }
+
+  function edit(id) {
+    /* One row at a time: two open editors both showing "is default" checkboxes
+       is a good way to save the wrong one. */
+    section.querySelectorAll('[data-offer-edit]').forEach(function (r) {
+      if (r.dataset.offerEdit !== String(id)) cancel(r.dataset.offerEdit);
+    });
+    row('view', id).hidden = true;
+    var e = row('edit', id);
+    e.hidden = false;
+    var first = e.querySelector('input[name=label]');
+    if (first) { first.focus(); first.select(); }
+  }
+
+  function cancel(id) {
+    var v = row('view', id), e = row('edit', id);
+    if (!v || !e) return;
+    v.hidden = false;
+    e.hidden = true;
+    /* Reset the inputs to what is on the server, so cancelling twice cannot
+       leave half-typed values behind. */
+    e.querySelectorAll('input').forEach(function (i) {
+      if (i.type === 'checkbox') i.checked = i.defaultChecked;
+      else i.value = i.defaultValue;
+    });
+  }
+
+  section.querySelectorAll('[data-edit-offer]').forEach(function (b) {
+    b.addEventListener('click', function () { edit(b.dataset.editOffer); });
+  });
+  section.querySelectorAll('[data-cancel-offer]').forEach(function (b) {
+    b.addEventListener('click', function () { cancel(b.dataset.cancelOffer); });
+  });
+  section.querySelectorAll('[data-del-offer]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (!confirm('حذف العرض «' + b.dataset.label + '»؟')) return;
+      document.getElementById('offerDeleteId').value = b.dataset.delOffer;
+      document.getElementById('offerDeleteForm').submit();
+    });
+  });
+
+  section.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var open = section.querySelector('[data-offer-edit]:not([hidden])');
+    if (open) cancel(open.dataset.offerEdit);
+  });
+
+  /* Ticking "default" here will clear it on the others when saved; say so
+     before the save rather than after. */
+  section.querySelectorAll('[data-offer-edit] input[name=is_default]').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      if (!cb.checked) return;
+      var others = section.querySelectorAll('[data-offer-view] td:nth-child(6)');
+      var already = Array.prototype.filter.call(others, function (td) {
+        return td.textContent.trim() === '✓';
+      }).length;
+      if (already) cb.closest('tr').classList.add('warn-default');
+    });
+  });
+})();
+</script>
 </section>
 
 <section id="options" class="pe-panel pe-section" data-tab="offers">

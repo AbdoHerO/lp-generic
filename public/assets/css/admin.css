@@ -906,3 +906,30 @@ tr.ab-winner td{ background:#f3fbf5; }
 .pe-step.current span{ background:var(--accent); color:#fff; }
 .pe-step + .pe-step::before{ content:'←'; color:#c9c0a7; margin-inline-end:2px; }
 .pe-steps .hint{ flex-basis:100%; margin:4px 0 0; }
+
+/* ── Inline offer editing ────────────────────────────────── */
+.offers-tbl td{ vertical-align:middle; }
+.offers-tbl .offer-edit td{ background:#fdfbf6; padding:8px 10px; }
+.offers-tbl .offer-edit input[type=text],
+.offers-tbl .offer-edit input[type=number],
+.offers-tbl .offer-edit input:not([type]){
+  width:100%; padding:8px 10px; border:1px solid #c9c0a7; border-radius:8px;
+  font-family:inherit; font-size:13px; background:#fff;
+}
+.offers-tbl .offer-edit input:focus{
+  outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(160,122,60,.18);
+}
+.offers-tbl .w-xs{ max-width:70px; }
+.offers-tbl .w-sm{ max-width:100px; }
+.offers-tbl .offer-edit .cb-row{ justify-content:center; }
+.offer-form{ display:none; }
+
+.btn-sm.primary{ background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-sm.primary:hover{ background:var(--accent-2); }
+
+/* A row that was just saved, so the change is visible after the redirect. */
+@keyframes offerSaved{ from{ background:#d8efdd; } to{ background:transparent; } }
+.offer-row.just-saved td{ animation:offerSaved 2.2s ease-out; }
+.offer-edit.warn-default input[name=is_default]{ outline:2px solid #e6c87a; outline-offset:2px; }
+
+.sub-title{ margin:22px 0 8px; font-size:13px; font-weight:700; color:#6a6258; }

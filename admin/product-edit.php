@@ -135,27 +135,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect(base_url('admin/product-edit.php?id=' . $newId . '&saved=1'));
     }
 
+    // Offer fields, shared by add and edit so the two can never drift apart.
+    $offerFields = static function (): array {
+        return [
+            ':l'  => clean_string($_POST['label'] ?? '', 160),
+            ':q'  => max(1, (int)($_POST['quantity'] ?? 1)),
+            ':t'  => (float)($_POST['total_price'] ?? 0),
+            ':c'  => ($_POST['compare_price'] ?? '') !== '' ? (float)$_POST['compare_price'] : null,
+            ':r'  => !empty($_POST['is_recommended']) ? 1 : 0,
+            ':f'  => !empty($_POST['free_shipping']) ? 1 : 0,
+            ':d'  => !empty($_POST['is_default']) ? 1 : 0,
+            ':ro' => !empty($_POST['requires_options']) ? 1 : 0,
+            ':po' => (int)($_POST['position'] ?? 0),
+        ];
+    };
+
+    /**
+     * Exactly one default per product.
+     *
+     * The page preselects the default offer on load, so two defaults means the
+     * second silently wins and the first looks ignored. Clearing the others
+     * here is what makes ticking the box do what it appears to do.
+     */
+    $keepOneDefault = static function (PDO $pdo, int $productId, int $keepOfferId): void {
+        $pdo->prepare("UPDATE product_offers SET is_default = 0
+                       WHERE product_id = :p AND id <> :i")
+            ->execute([':p' => $productId, ':i' => $keepOfferId]);
+    };
+
     if ($action === 'add_offer' && $product) {
+        $data = $offerFields() + [':p' => $product['id']];
         $st = $pdo->prepare("INSERT INTO product_offers (product_id,label,quantity,total_price,compare_price,is_recommended,free_shipping,is_default,requires_options,position)
             VALUES (:p,:l,:q,:t,:c,:r,:f,:d,:ro,:po)");
-        $st->execute([
-            ':p'=>$product['id'],
-            ':l'=>clean_string($_POST['label'] ?? '', 160),
-            ':q'=>max(1,(int)$_POST['quantity']),
-            ':t'=>(float)$_POST['total_price'],
-            ':c'=>$_POST['compare_price'] !== '' ? (float)$_POST['compare_price'] : null,
-            ':r'=>!empty($_POST['is_recommended']) ? 1 : 0,
-            ':f'=>!empty($_POST['free_shipping']) ? 1 : 0,
-            ':d'=>!empty($_POST['is_default']) ? 1 : 0,
-            ':ro'=>!empty($_POST['requires_options']) ? 1 : 0,
-            ':po'=>(int)($_POST['position'] ?? 0),
-        ]);
-        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . '#offers'));
+        $st->execute($data);
+
+        if ($data[':d']) $keepOneDefault($pdo, (int)$product['id'], (int)$pdo->lastInsertId());
+
+        Activity::log('create', 'product', (int)$product['id'], 'offer: ' . $data[':l']);
+        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . '&tab=offers'));
+    }
+
+    if ($action === 'edit_offer' && $product) {
+        $offerId = (int)($_POST['offer_id'] ?? 0);
+        $data = $offerFields() + [':i' => $offerId, ':p' => $product['id']];
+
+        // Scoped to this product, so a crafted offer_id cannot edit another
+        // page's pricing.
+        $pdo->prepare("UPDATE product_offers SET label=:l, quantity=:q, total_price=:t,
+                       compare_price=:c, is_recommended=:r, free_shipping=:f, is_default=:d,
+                       requires_options=:ro, position=:po
+                       WHERE id=:i AND product_id=:p")->execute($data);
+
+        if ($data[':d']) $keepOneDefault($pdo, (int)$product['id'], $offerId);
+
+        Activity::log('update', 'product', (int)$product['id'], 'offer #' . $offerId . ': ' . $data[':l']);
+        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . '&tab=offers&offer_saved=' . $offerId));
     }
     if ($action === 'del_offer' && $product) {
         $st = $pdo->prepare("DELETE FROM product_offers WHERE id=:i AND product_id=:p");
         $st->execute([':i'=>(int)$_POST['offer_id'], ':p'=>$product['id']]);
-        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . '#offers'));
+        Activity::log('delete', 'product', (int)$product['id'], 'offer #' . (int)$_POST['offer_id']);
+        redirect(base_url('admin/product-edit.php?id=' . $product['id'] . '&tab=offers'));
     }
     if ($action === 'add_group' && $product) {
         $st = $pdo->prepare("INSERT INTO product_option_groups (product_id,name,label,type,position,is_required)
