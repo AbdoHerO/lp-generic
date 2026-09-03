@@ -50,6 +50,8 @@ $required = [
     'src/Models/PageTemplate.php', 'src/Controllers/SeoController.php',
     'src/Views/partials/structured-data.php',
     'admin/views/partials/section-editor.php', 'admin/views/partials/page-options.php',
+    'admin/views/partials/product-tabs.php', 'admin/views/partials/product-tabs-js.php',
+    'src/Models/ProductChecklist.php',
     'admin/reports.php', 'admin/users.php', 'admin/activity.php', 'admin/drafts.php',
     'admin/categories.php',
     'admin/templates/apparel.json', 'admin/templates/electronics.json',

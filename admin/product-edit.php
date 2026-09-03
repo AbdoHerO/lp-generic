@@ -229,13 +229,19 @@ $groups = $product ? Product::optionGroups((int)$product['id']) : [];
 $media  = $product ? Product::media((int)$product['id']) : [];
 
 require_once __DIR__ . '/../src/Models/Experiment.php';
+require_once __DIR__ . '/../src/Models/ProductChecklist.php';
+
+$sections  = Sections::decode($product['sections_json'] ?? null);
+$checklist = ProductChecklist::build($product, $offers, $groups, $media, $sections);
 
 admin_render('product-edit', [
     'pixels'   => Pixel::grouped(),
     // Results only mean something once the test has actually run.
     'abResults' => ($product && !empty($product['ab_enabled']))
         ? Experiment::results((int)$product['id']) : null,
-    'sections' => Sections::decode($product['sections_json'] ?? null),
+    'sections'  => $sections,
+    'checklist' => $checklist,
+    'tabIssues' => ProductChecklist::tabIssues($checklist),
     'title'   => $product ? 'تعديل: ' . $product['title'] : 'منتج جديد',
     'product' => $product,
     'cats'    => $cats,

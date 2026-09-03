@@ -37,6 +37,7 @@ function clean_string($v, int $max = 500): string {
 require $ROOT . '/src/Models/Pixel.php';
 require $ROOT . '/src/Models/Sections.php';
 require $ROOT . '/src/Models/Experiment.php';
+require $ROOT . '/src/Models/ProductChecklist.php';
 
 function render_admin(string $view, array $data, string $ROOT): string {
     extract($data, EXTR_SKIP);
@@ -86,7 +87,9 @@ $sections = Sections::decode('{"hero":{"headline":"عنوان الاختبار",
     . '"testimonials":[{"name":"مريم","text":"رائع"}],"faqs":[{"q":"س؟","a":"ج."}],'
     . '"countdown_title":"عرض","cta_text":"اطلب"}');
 $html = render_admin('product-edit', ['product'=>$prod,'cats'=>[],'offers'=>[],'groups'=>[],
-  'media'=>[],'msg'=>null,'pixels'=>Pixel::grouped(),'sections'=>$sections,'abResults'=>null], $ROOT);
+  'media'=>[],'msg'=>null,'pixels'=>Pixel::grouped(),'sections'=>$sections,'abResults'=>null,
+  'checklist'=>ProductChecklist::build($prod, [], [], [], $sections),
+  'tabIssues'=>ProductChecklist::tabIssues(ProductChecklist::build($prod, [], [], [], $sections))], $ROOT);
 file_put_contents($tmp . '/smoke_admin_prodedit.html', $html);
 $htmlSaved = $html;
 $checks['editor: pixel section']       = str_contains($html, 'التتبع والبكسلات');
@@ -111,7 +114,9 @@ $checks['sections: JSON pane is escaped']  = !str_contains($html, '</textarea><s
 
 // --- Product editor for a brand-new product (no $product row) -------------
 $html = render_admin('product-edit', ['product'=>null,'cats'=>[],'offers'=>[],'groups'=>[],
-  'media'=>[],'msg'=>null,'pixels'=>Pixel::grouped(),'sections'=>Sections::blank(),'abResults'=>null], $ROOT);
+  'media'=>[],'msg'=>null,'pixels'=>Pixel::grouped(),'sections'=>Sections::blank(),'abResults'=>null,
+  'checklist'=>ProductChecklist::build(null, [], [], [], Sections::blank()),
+  'tabIssues'=>[]], $ROOT);
 $checks['editor(new): renders']        = str_contains($html, 'name="fb_pixel_id"');
 $checks['editor(new): no PHP warning'] = !str_contains($html, 'Warning:') && !str_contains($html, 'Notice:');
 $checks['editor: campaign options']      = str_contains($htmlSaved ?? '', 'name="campaign_ends_at"');
@@ -120,6 +125,22 @@ $checks['editor: per-page colours']      = str_contains($htmlSaved ?? '', 'name=
 $checks['editor: A/B panel']             = str_contains($htmlSaved ?? '', 'name="sections_json_b"');
 $checks['editor: A/B split field']       = str_contains($htmlSaved ?? '', 'name="ab_split"');
 $checks['editor(new): no A/B panel']     = !str_contains($html, 'name="sections_json_b"');
+// The editor is tabbed now: panels are hidden in place, not removed, so every
+// field must still be in the DOM regardless of which tab is active.
+$checks['editor: tab bar present']       = str_contains($htmlSaved ?? '', 'class="pe-tabs"');
+$checks['editor: five tabs']             = substr_count($htmlSaved ?? '', 'class="pe-tab"') === 5;
+$checks['editor: panels are tagged']     = substr_count($htmlSaved ?? '', 'data-tab="basics"') >= 2
+                                           && str_contains($htmlSaved ?? '', 'data-tab="content"')
+                                           && str_contains($htmlSaved ?? '', 'data-tab="offers"')
+                                           && str_contains($htmlSaved ?? '', 'data-tab="media"')
+                                           && str_contains($htmlSaved ?? '', 'data-tab="campaign"');
+$checks['editor: readiness panel']       = str_contains($htmlSaved ?? '', 'id="peReadyPanel"');
+$checks['editor: checklist items']       = str_contains($htmlSaved ?? '', 'pe-check');
+$checks['editor: checklist navigates']   = str_contains($htmlSaved ?? '', 'data-goto=');
+$checks['editor: sticky save bar']       = str_contains($htmlSaved ?? '', 'form="productForm"');
+$checks['editor: save is outside the form'] =
+    strpos($htmlSaved ?? '', 'form="productForm"') > strpos($htmlSaved ?? '', '</form>');
+$checks['editor(new): tabs are locked']  = str_contains($html, 'pe-tab-lock') || !str_contains($html, 'class="pe-tabs"');
 $checks['editor: preview dock present']   = str_contains($htmlSaved ?? '', 'id="previewDock"');
 $checks['editor(new): no preview dock']   = !str_contains($html, 'id="previewDock"');
 $checks['editor(new): one empty row per group'] =

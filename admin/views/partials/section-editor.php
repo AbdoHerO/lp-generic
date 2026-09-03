@@ -15,7 +15,7 @@
 $heroBadges = implode(', ', $sections['hero']['badges'] ?? []);
 $iconChoices = ['🚚', '💵', '🛡️', '🎧', '✅', '⭐', '🔥', '🎁', '⏱️', '💎', '👌', '✦'];
 ?>
-<div class="grp wide sec-editor" id="sectionEditor">
+<div class="grp wide sec-editor pe-panel" id="sectionEditor" data-tab="content">
   <div class="sec-head">
     <h3>محتوى صفحة الهبوط</h3>
     <div class="seg-ctrl sec-mode">

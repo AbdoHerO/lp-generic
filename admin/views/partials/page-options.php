@@ -14,7 +14,7 @@ $endsAt = !empty($product['campaign_ends_at'])
     ? date('Y-m-d\TH:i', strtotime($product['campaign_ends_at']))
     : '';
 ?>
-<div class="grp wide">
+<div class="grp wide pe-panel" data-tab="campaign">
   <h3>خيارات الحملة</h3>
 
   <div class="row2">
@@ -47,7 +47,7 @@ $endsAt = !empty($product['campaign_ends_at'])
 </div>
 
 <?php if (!empty($product['id'])): ?>
-<div class="grp wide ab-block">
+<div class="grp wide ab-block pe-panel" data-tab="campaign">
   <h3>اختبار A/B</h3>
   <p class="hint">
     نسخة ثانية من محتوى الصفحة تُعرض لجزء من الزوار. العروض والصور والخيارات تبقى مشتركة —

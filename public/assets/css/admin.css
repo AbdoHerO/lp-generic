@@ -1,5 +1,13 @@
 /* Admin */
-body.admin{ background: #f3efe6; margin: 0; min-height: 100vh; display:flex; overflow-x: hidden; }
+body.admin{
+  background: #f3efe6; margin: 0; min-height: 100vh; display:flex;
+  /* overflow-x:hidden makes body a scroll container, which silently disables
+     position:sticky on every descendant — the editor's tab bar and save bar
+     among them. `clip` prevents the horizontal scroll without that side effect;
+     the `hidden` above it is the fallback for browsers that lack `clip`. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
 body.admin.side-open{ overflow: hidden; }
 .side{ width: 240px; background: #1a1a1a; color: #d8d2c2; padding: 20px 12px; min-height: 100vh; position: sticky; top: 0; align-self: flex-start; display:flex; flex-direction:column; z-index: 80; }
 .side-overlay{ display:none; position: fixed; inset:0; background: rgba(0,0,0,.5); z-index: 70; opacity: 0; transition: opacity .2s; }
@@ -762,3 +770,139 @@ tr.ab-winner td{ background:#f3fbf5; }
 .tpl-card strong{ font-size:14px; color:#1a1a1a; }
 .tpl-card small{ font-size:12px; color:#8a8276; line-height:1.5; }
 .tpl-card .tpl-meta{ font-size:11px; color:#a8a091; margin-top:2px; }
+
+/* ══════════════════════════════════════════════════════════
+   Product editor — tabbed layout
+   The editor used to be one 6,000px column where every field
+   looked equally important. Tabs group the work in the order
+   it is actually done; the readiness panel says what is left.
+   ══════════════════════════════════════════════════════════ */
+
+.pe-head{
+  position:sticky; top:0; z-index:60;
+  display:flex; align-items:stretch; gap:14px; flex-wrap:wrap;
+  background:#f3efe6; padding:10px 0 0; margin:-4px 0 18px;
+  border-bottom:1px solid #e0d9c5;
+}
+
+.pe-tabs{ display:flex; gap:4px; flex:1; min-width:0; overflow-x:auto; scrollbar-width:none; }
+.pe-tabs::-webkit-scrollbar{ display:none; }
+
+.pe-tab{
+  display:flex; align-items:center; gap:7px; flex:none;
+  background:transparent; border:0; border-bottom:3px solid transparent;
+  padding:10px 16px 12px; font-family:inherit; font-size:14px; font-weight:600;
+  color:#6a6258; cursor:pointer; white-space:nowrap;
+  transition:color .15s, border-color .15s, background .15s;
+  border-radius:8px 8px 0 0;
+}
+.pe-tab:hover:not(:disabled){ color:#1a1a1a; background:rgba(255,255,255,.6); }
+.pe-tab.active{ color:var(--accent); border-bottom-color:var(--accent); background:#fff; }
+.pe-tab:disabled{ opacity:.45; cursor:not-allowed; }
+.pe-tab-icon{ font-size:15px; line-height:1; }
+.pe-tab-badge{
+  background:#e6c87a; color:#5c4413; font-size:11px; font-weight:700;
+  min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+  display:inline-grid; place-items:center;
+}
+.pe-tab.active .pe-tab-badge{ background:#a07a3c; color:#fff; }
+.pe-tab-lock{ font-size:11px; opacity:.6; }
+
+/* Readiness ring + panel */
+.pe-ready{ position:relative; flex:none; align-self:center; padding-bottom:6px; }
+.pe-ready-toggle{
+  display:flex; align-items:center; gap:10px;
+  background:#fff; border:1px solid #e0d9c5; border-radius:999px;
+  padding:6px 16px 6px 6px; font-family:inherit; cursor:pointer;
+  transition:border-color .15s, box-shadow .15s;
+}
+.pe-ready-toggle:hover{ border-color:var(--accent); box-shadow:var(--shadow); }
+.pe-ready-ring{
+  --pct:0;
+  position:relative; width:38px; height:38px; flex:none; border-radius:50%;
+  display:grid; place-items:center;
+  background:conic-gradient(var(--ring,#a07a3c) calc(var(--pct)*1%), #ece5d6 0);
+}
+.pe-ready-ring::before{ content:''; position:absolute; inset:4px; background:#fff; border-radius:50%; }
+.pe-ready-ring span{ position:relative; font-size:10px; font-weight:800; color:#4a4a4a; }
+.pe-ready.is-ready .pe-ready-ring{ --ring:#2d8a4a; }
+.pe-ready.not-ready .pe-ready-ring{ --ring:#a07a3c; }
+.pe-ready-text{ display:flex; flex-direction:column; text-align:start; line-height:1.35; }
+.pe-ready-text strong{ font-size:13px; }
+.pe-ready.is-ready .pe-ready-text strong{ color:#1f6e3a; }
+.pe-ready.not-ready .pe-ready-text strong{ color:#a07a3c; }
+.pe-ready-text small{ font-size:11px; color:#8a8276; }
+
+.pe-ready-panel{
+  position:absolute; inset-block-start:calc(100% + 6px); inset-inline-end:0; z-index:70;
+  width:min(420px, 90vw); max-height:70vh; overflow:auto;
+  background:#fff; border:1px solid #e0d9c5; border-radius:14px;
+  padding:16px 18px; box-shadow:var(--shadow-lg);
+}
+.pe-ready-panel[hidden]{ display:none; }
+.pe-ready-panel h4{ margin:12px 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:#8a8276; }
+.pe-ready-panel h4:first-child{ margin-top:0; }
+.pe-check{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.pe-check li{ display:flex; align-items:flex-start; gap:9px; font-size:13px; }
+.pe-check-mark{ flex:none; width:18px; height:18px; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:800; margin-top:1px; }
+.pe-check .done .pe-check-mark{ background:#d8efdd; color:#1f6e3a; }
+.pe-check .todo .pe-check-mark{ background:#f0ebde; color:#8a8276; }
+.pe-check .todo-req .pe-check-mark{ background:#fbe4e1; color:#b3261e; }
+.pe-check .done strong{ color:#8a8276; font-weight:500; }
+.pe-check-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.pe-check-body small{ color:#8a8276; font-size:12px; line-height:1.5; }
+.pe-check .pe-goto{ flex:none; align-self:center; }
+
+/* Panels */
+.pe-panel[hidden]{ display:none !important; }
+.pe-section{ background:#fff; border:1px solid #e9e3d6; border-radius:12px; padding:20px 22px; margin-bottom:18px; }
+.pe-section > .sec-title:first-child{ margin-top:0; }
+.pe-body{ padding-bottom:4px; }
+
+/* Sticky action bar */
+.pe-actions{
+  position:sticky; inset-block-end:0; z-index:65;
+  margin:18px -24px 0; padding:0 24px;
+  background:linear-gradient(180deg, rgba(243,239,230,0) 0%, #f3efe6 22%);
+}
+.pe-actions-inner{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  background:#fff; border:1px solid #e0d9c5; border-radius:14px;
+  padding:12px 16px; margin-bottom:14px; box-shadow:0 -2px 18px rgba(20,20,20,.06);
+}
+.pe-actions-spacer{ flex:1; }
+.pe-actions .pe-save{ width:auto; padding:12px 30px; }
+.pe-actions-hint{ font-size:12px; font-weight:600; color:#a07a3c; }
+.pe-status{ font-size:13px; font-weight:700; padding:6px 14px; border-radius:999px; }
+.pe-status.live{ background:#d8efdd; color:#1f6e3a; }
+.pe-status.draft{ background:#f0ebde; color:#6a6258; }
+
+@media (max-width:720px){
+  .pe-head{ gap:8px; }
+  .pe-tab{ padding:9px 12px 11px; font-size:13px; }
+  .pe-tab-label{ display:none; }
+  .pe-tab.active .pe-tab-label{ display:inline; }
+  .pe-ready{ width:100%; }
+  .pe-ready-panel{ inset-inline-end:auto; inset-inline-start:0; }
+  .pe-actions{ margin-inline:-14px; padding-inline:14px; }
+  .pe-actions .pe-save{ flex:1; }
+}
+
+/* First-run stepper: a new product only has the basics form until it is saved. */
+.pe-steps{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:#fff; border:1px solid #e9e3d6; border-radius:12px;
+  padding:14px 18px; margin-bottom:18px;
+}
+.pe-step{
+  display:flex; align-items:center; gap:8px;
+  font-size:13px; font-weight:600; color:#8a8276;
+}
+.pe-step span{
+  width:24px; height:24px; border-radius:50%; display:grid; place-items:center;
+  background:#f0ebde; color:#8a8276; font-size:12px; font-weight:800;
+}
+.pe-step.current{ color:#1a1a1a; }
+.pe-step.current span{ background:var(--accent); color:#fff; }
+.pe-step + .pe-step::before{ content:'←'; color:#c9c0a7; margin-inline-end:2px; }
+.pe-steps .hint{ flex-basis:100%; margin:4px 0 0; }

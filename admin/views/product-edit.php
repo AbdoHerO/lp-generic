@@ -66,11 +66,27 @@
 <?php endif; ?>
 <?php include __DIR__ . '/partials/live-preview.php'; ?>
 
-<form method="post" enctype="multipart/form-data" class="form-grid">
+<?php if ($product): ?>
+  <?php include __DIR__ . '/partials/product-tabs.php'; ?>
+<?php endif; ?>
+
+<?php if (!$product): ?>
+<div class="pe-steps">
+  <div class="pe-step current"><span>1</span> المعلومات الأساسية</div>
+  <div class="pe-step"><span>2</span> المحتوى والعروض والصور</div>
+  <p class="hint">
+    املأ الأساسيات واحفظ — عندها تُفتح بقية الأقسام (المحتوى، العروض، الصور، الحملة)
+    ويظهر لك مؤشّر جاهزية يخبرك بما ينقص قبل النشر.
+  </p>
+</div>
+<?php endif; ?>
+
+<div class="pe-body">
+<form method="post" enctype="multipart/form-data" class="form-grid" id="productForm">
   <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
   <input type="hidden" name="action" value="save">
 
-  <div class="grp">
+  <div class="grp pe-panel" data-tab="basics">
     <h3>المعلومات الأساسية</h3>
     <label>العنوان <input name="title" required value="<?= e($product['title'] ?? '') ?>"></label>
     <label>الـSlug (رابط)
@@ -132,8 +148,8 @@
     <label class="cb"><input type="checkbox" name="status" <?= !empty($product['status']) || !$product ? 'checked':'' ?>> منتج نشط</label>
   </div>
 
-  <div class="grp">
-    <h3>الصور والـSEO</h3>
+  <div class="grp pe-panel" data-tab="basics">
+    <h3>صورة الغلاف والـSEO</h3>
     <label>صورة الغلاف
       <?php if (!empty($product['cover_image'])): ?><img class="thumb" src="<?= e(upload_url($product['cover_image'])) ?>"><?php endif; ?>
       <input type="file" name="cover_image" accept="image/*">
@@ -156,7 +172,7 @@
     <label>وصف SEO <input name="seo_description" value="<?= e($product['seo_description'] ?? '') ?>"></label>
   </div>
 
-  <div class="grp wide px-picker">
+  <div class="grp wide px-picker pe-panel" data-tab="campaign">
     <h3>التتبع والبكسلات</h3>
     <p class="hint">
       اختر البكسل الذي يستقبل أحداث <strong>هذه الصفحة</strong> فقط. هكذا يمكنك تشغيل إعلان ميتا بحساب،
@@ -199,17 +215,37 @@
 
   <?php include __DIR__ . '/partials/page-options.php'; ?>
 
-  <div class="grp wide">
-    <button class="btn-buy" type="submit">حفظ المنتج</button>
-  </div>
 </form>
+</div><!-- /.pe-body -->
+
+<!-- Sticky action bar. The button lives outside the form and reaches it with
+     form=, so it stays visible on every tab instead of only at the bottom of
+     the first one. -->
+<div class="pe-actions">
+  <div class="pe-actions-inner">
+    <?php if ($product): ?>
+      <span class="pe-status <?= !empty($product['status']) ? 'live' : 'draft' ?>">
+        <?= !empty($product['status']) ? '● منشور' : '○ غير منشور' ?>
+      </span>
+      <a class="btn ghost" target="_blank" href="<?= base_url($product['slug'] . '?preview=1') ?>">معاينة ↗</a>
+    <?php endif; ?>
+    <span class="pe-actions-spacer"></span>
+    <span class="pe-actions-hint" id="peDirtyHint" hidden>تعديلات غير محفوظة</span>
+    <button class="btn-buy pe-save" type="submit" form="productForm">
+      <?= $product ? 'حفظ التعديلات' : 'حفظ ومتابعة' ?>
+    </button>
+  </div>
+</div>
 <?php include __DIR__ . '/partials/unsaved-guard.php'; ?>
 
 <?php if ($product): ?>
-<hr style="margin:30px 0">
-
-<section id="offers">
+<div class="pe-body">
+<section id="offers" class="pe-panel pe-section" data-tab="offers">
 <h2 class="sec-title">العروض</h2>
+<p class="hint">
+  مستويات السعر التي يختار منها الزائر. اجعل عرضاً واحداً «افتراضي» ليكون محدداً عند فتح الصفحة،
+  وواحداً «موصى به» ليظهر بشارة «الأفضل».
+</p>
 <div class="tbl-wrap">
 <table class="tbl">
 <thead><tr><th>العنوان</th><th>الكمية</th><th>السعر</th><th>سعر المقارنة</th><th>افتراضي</th><th>موصى به</th><th>شحن مجاني</th><th>اختيارات؟</th><th></th></tr></thead>
@@ -254,10 +290,12 @@
 </form>
 </section>
 
-<hr style="margin:30px 0">
-
-<section id="options">
+<section id="options" class="pe-panel pe-section" data-tab="offers">
 <h2 class="sec-title">مجموعات الخيارات</h2>
+<p class="hint">
+  اللون، المقاس، عدد الرفوف… تتكرر لكل وحدة عندما تكون كمية العرض أكثر من واحدة.
+  <strong>مجموعة بلا قيم تمنع إتمام الطلب</strong> — أضف قيمها أو احذفها.
+</p>
 <?php foreach ($groups as $g): ?>
   <div class="grp">
     <div class="grp-head">
@@ -312,10 +350,8 @@
 </form>
 </section>
 
-<hr style="margin:30px 0">
-
 <!-- ══════════════════ SLIDER IMAGES ══════════════════ -->
-<section id="slider">
+<section id="slider" class="pe-panel pe-section" data-tab="media">
 <div class="media-section-head">
   <span class="media-section-badge slider-badge">🖼️ سلايدر</span>
   <h2 class="sec-title">صور السلايدر</h2>
@@ -356,10 +392,8 @@
 </form>
 </section>
 
-<hr style="margin:30px 0">
-
 <!-- ══════════════════ GALLERY / BODY IMAGES ══════════════════ -->
-<section id="gallery">
+<section id="gallery" class="pe-panel pe-section" data-tab="media">
 <div class="media-section-head">
   <span class="media-section-badge gallery-badge">🗂️ معرض</span>
   <h2 class="sec-title">صور الجسم (المعرض)</h2>
@@ -455,4 +489,7 @@
 })();
 </script>
 
+</div><!-- /.pe-body -->
+
+<?php include __DIR__ . '/partials/product-tabs-js.php'; ?>
 <?php endif; ?>
