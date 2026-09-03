@@ -1,7 +1,9 @@
 # Keep credentials, VCS history and dev-only helpers out of the image.
 #
-# Note what is NOT here: sql/. It must ship, because config/database.php
-# imports schema.sql + seed.sql the first time the admins table is missing.
+# Note what is NOT here: sql/ and bin/. Both must ship. config/database.php
+# imports sql/schema.sql + sql/seed.sql the first time the admins table is
+# missing, and bin/db.php is what the deployment pipeline calls to migrate,
+# seed, back up or rebuild the database. Apache denies both paths.
 # uploads/ is gitignored, so the build context has no images to exclude anyway —
 # that directory is a volume mount point at runtime.
 
@@ -16,18 +18,23 @@ config/config.local.php
 config/config.prod.php
 .env
 .env.*
-
-# Development-only diagnostic endpoint — not something to expose on a public
-# domain. Apache denies it as well, in case this file is ever edited.
-_diag.php
+config/.env
+**/.env
 
 # Build/deploy metadata the running container has no use for.
 Dockerfile
 .dockerignore
 docker-compose.yml
 Jenkinsfile
-DEPLOYMENT.md
-README.md
+
+# Documentation. Every .md here would otherwise sit in the web root as a real
+# file, and .htaccess is the only thing between it and the public internet.
+# Keeping it out of the image removes that dependency entirely.
+*.md
+
+# Tests. They stub the database and never run in production; shipping them adds
+# executable PHP to the web root for no benefit.
+tests/
 
 *.log
 *.cache

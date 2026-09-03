@@ -7,7 +7,8 @@ function db(): PDO {
 
     // Auto-create the database if it doesn't exist yet
     $metaDsn = "mysql:host={$d['host']};port={$d['port']};charset={$d['charset']}";
-    $meta = new PDO($metaDsn, $d['user'], $d['pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $meta = new PDO($metaDsn, $d['user'], $d['pass'],
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 10]);
     $meta->exec("CREATE DATABASE IF NOT EXISTS `{$d['name']}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     unset($meta);
 
@@ -16,9 +17,21 @@ function db(): PDO {
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
+        // Caps the connect phase. An unreachable database host otherwise holds
+        // the request until max_execution_time, which exhausts Apache workers
+        // during an outage. Note this is MYSQL_OPT_CONNECT_TIMEOUT only: a
+        // server that accepts the socket and then stalls the auth handshake is
+        // not covered by any PDO option, and still needs a client-side timeout
+        // at the caller (the pipeline's job timeout, for instance).
+        PDO::ATTR_TIMEOUT            => 10,
     ]);
 
     _auto_migrate($pdo);
+
+    // Incremental migrations for installs that already have a schema.
+    require_once __DIR__ . '/migrations.php';
+    run_migrations($pdo);
+
     return $pdo;
 }
 

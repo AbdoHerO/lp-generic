@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292 72" width="292" height="72" role="img" aria-label="tujjar.store">
+  <title>tujjar.store</title>
+  <defs>
+    <linearGradient id="tjGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c79a4d"/>
+      <stop offset="1" stop-color="#8f6a2d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- mark: shopping bag in a rounded tile -->
+  <g transform="translate(4 4)">
+    <rect x="0" y="0" width="64" height="64" rx="16" fill="url(#tjGold)"/>
+    <g fill="none" stroke="#ffffff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M24 25v-4a8 8 0 0 1 16 0v4"/>
+      <rect x="15" y="25" width="34" height="27" rx="6"/>
+      <path d="M24 34.5h16"/>
+    </g>
+  </g>
+
+  <!-- wordmark -->
+  <text x="82" y="47"
+        font-family="'Segoe UI', Inter, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="34" letter-spacing="-0.6">
+    <tspan font-weight="800" fill="#ffffff">tujjar</tspan><tspan font-weight="600" fill="#d8b473">.store</tspan>
+  </text>
+  <text x="84" y="62"
+        font-family="'Segoe UI', Inter, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="10.5" font-weight="600" letter-spacing="2.6" fill="#9a9284">COD · MAROC</text>
+</svg>

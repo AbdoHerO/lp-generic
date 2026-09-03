@@ -251,3 +251,26 @@
   font-size: 13px; font-weight: 700;
 }
 .admin-preview-bar a { text-decoration: underline; margin-inline-start: 8px; }
+
+/* Honeypot. Off-screen rather than display:none — some bots skip hidden inputs
+   but happily fill anything still in the layout. Never focusable, never read. */
+.hp-field{
+  position:absolute; left:-9999px; top:auto;
+  width:1px; height:1px; overflow:hidden;
+  opacity:0; pointer-events:none;
+}
+
+/* In-place order confirmation, shown before the redirect so the conversion
+   pixel fires on a page that is still open. */
+.order-done{
+  background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+  padding:34px 24px; text-align:center; box-shadow:var(--shadow);
+}
+.order-done .od-icon{
+  width:60px; height:60px; margin:0 auto 12px; border-radius:50%;
+  display:grid; place-items:center; font-size:28px; font-weight:800;
+  background:#e7f4ec; color:var(--success);
+}
+.order-done h3{ margin:0 0 6px; font-family:var(--serif); font-size:22px; }
+.order-done p{ margin:4px 0; color:var(--ink-2); }
+.order-done .od-ref{ color:var(--muted); font-size:14px; }

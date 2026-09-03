@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/_bootstrap.php';
-admin_require_auth();
+admin_require_admin();
 admin_require_csrf();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect(base_url('admin/products.php'));
@@ -39,8 +39,8 @@ try {
 
     // 1) Clone the product row (status disabled by default to avoid accidental publish)
     $ins = $pdo->prepare("INSERT INTO products
-        (category_id,title,slug,short_desc,full_desc,cover_image,base_price,compare_price,badges,status,seo_title,seo_description,og_image,sections_json)
-        VALUES (:category_id,:title,:slug,:short_desc,:full_desc,:cover_image,:base_price,:compare_price,:badges,:status,:seo_title,:seo_description,:og_image,:sections_json)");
+        (category_id,title,slug,short_desc,full_desc,cover_image,base_price,compare_price,badges,status,seo_title,seo_description,og_image,fb_pixel_id,tt_pixel_id,accent_color,cta_color,sections_json)
+        VALUES (:category_id,:title,:slug,:short_desc,:full_desc,:cover_image,:base_price,:compare_price,:badges,:status,:seo_title,:seo_description,:og_image,:fb_pixel_id,:tt_pixel_id,:accent_color,:cta_color,:sections_json)");
     $ins->execute([
         ':category_id'    => $src['category_id'],
         ':title'          => $newTitle,
@@ -55,6 +55,12 @@ try {
         ':seo_title'      => $src['seo_title'],
         ':seo_description'=> $src['seo_description'],
         ':og_image'       => $src['og_image'],
+        ':fb_pixel_id'    => $src['fb_pixel_id'],
+        ':tt_pixel_id'    => $src['tt_pixel_id'],
+        ':accent_color'   => $src['accent_color'] ?? null,
+        ':cta_color'      => $src['cta_color'] ?? null,
+        // Deliberately not copied: a deadline and a running A/B test belong to
+        // the campaign that created them, not to a fresh copy of the page.
         ':sections_json'  => $src['sections_json'],
     ]);
     $newId = (int)$pdo->lastInsertId();

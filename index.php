@@ -8,6 +8,7 @@ require __DIR__ . '/src/Controllers/HomeController.php';
 require __DIR__ . '/src/Controllers/ProductController.php';
 require __DIR__ . '/src/Controllers/LeadController.php';
 require __DIR__ . '/src/Controllers/PageController.php';
+require __DIR__ . '/src/Controllers/SeoController.php';
 
 $router->get('/',                        ['HomeController', 'index']);
 $router->get('/search',                  ['HomeController', 'search']);
@@ -15,6 +16,11 @@ $router->get('/category/{slug}',         ['HomeController', 'category']);
 
 $router->get('/thank-you',               ['LeadController', 'thankYou']);
 $router->post('/lead/submit',            ['LeadController', 'submit']);
+$router->post('/lead/draft',             ['LeadController', 'draft']);
+
+// Generated, not static files: the sitemap must list whatever is active now.
+$router->get('/robots.txt',              ['SeoController', 'robots']);
+$router->get('/sitemap.xml',             ['SeoController', 'sitemap']);
 
 $router->get('/page/privacy',            ['PageController', 'privacy']);
 $router->get('/page/terms',              ['PageController', 'terms']);

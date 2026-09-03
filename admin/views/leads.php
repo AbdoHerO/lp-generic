@@ -1,10 +1,21 @@
+<?php
+$statusLabels = [
+    'new' => 'جديد', 'called' => 'تم الاتصال', 'confirmed' => 'مؤكد', 'shipped' => 'مشحون',
+    'delivered' => 'تم التسليم', 'cancelled' => 'ملغى', 'no_answer' => 'لا يرد',
+];
+// The querystring the inline status form bounces back to, so a caller keeps
+// their place in the filtered queue.
+$currentQs = $_SERVER['QUERY_STRING'] ?? '';
+$currentQs = $currentQs !== '' ? '?' . $currentQs : '';
+$waNumber  = fn(string $p) => preg_replace('/\D/', '', $p);
+?>
 <!-- Filter bar -->
 <form method="get" class="filters" id="filterForm">
   <input type="text" name="phone"  placeholder="هاتف" value="<?= e($filters['phone']) ?>">
   <select name="status">
     <option value="">كل الحالات</option>
-    <?php foreach (['new','called','confirmed','shipped','delivered','cancelled','no_answer'] as $s): ?>
-      <option value="<?= $s ?>" <?= $filters['status']===$s?'selected':'' ?>><?= $s ?></option>
+    <?php foreach ($statusLabels as $s => $label): ?>
+      <option value="<?= e($s) ?>" <?= $filters['status']===$s?'selected':'' ?>><?= e($label) ?></option>
     <?php endforeach; ?>
   </select>
   <select name="product_id">
@@ -17,7 +28,8 @@
   <input type="date" name="from" value="<?= e($filters['from']) ?>">
   <input type="date" name="to"   value="<?= e($filters['to']) ?>">
   <button class="btn">تصفية</button>
-  <a class="btn" href="<?= base_url('admin/leads-export.php') ?>">تصدير CSV</a>
+  <a class="btn" href="<?= base_url('admin/leads-export.php' . $currentQs) ?>"
+     title="يصدّر الطلبات المطابقة للتصفية الحالية">تصدير CSV</a>
 </form>
 
 <!-- Bulk-delete form wraps the table -->
@@ -59,11 +71,27 @@
     <td>#<?= (int)$r['id'] ?></td>
     <td><?= e($r['created_at']) ?></td>
     <td><?= e($r['fullname']) ?></td>
-    <td><a href="tel:<?= e($r['phone']) ?>"><?= e($r['phone']) ?></a></td>
+    <td class="lead-contact">
+      <a href="tel:<?= e($r['phone']) ?>" title="اتصال"><?= e($r['phone']) ?></a>
+      <a class="wa-link" target="_blank" rel="noopener" title="واتساب"
+         href="https://wa.me/<?= e($waNumber($r['phone'])) ?>">wa</a>
+      <?php if (!empty($dupes[$r['phone']])): ?>
+        <span class="dupe-badge" title="هذا الرقم لديه <?= (int)$dupes[$r['phone']] ?> طلبات في آخر 30 يوم">
+          ×<?= (int)$dupes[$r['phone']] ?>
+        </span>
+      <?php endif; ?>
+    </td>
     <td><?= e($r['product_title']) ?></td>
     <td><?= e($r['offer_label']) ?></td>
     <td><?= e(number_format((float)$r['total_price'],2)) ?></td>
-    <td><span class="st st-<?= e($r['status']) ?>"><?= e($r['status']) ?></span></td>
+    <td>
+      <select class="inline-status st-<?= e($r['status']) ?>" data-id="<?= (int)$r['id'] ?>"
+              aria-label="حالة الطلب #<?= (int)$r['id'] ?>">
+        <?php foreach ($statusLabels as $k => $label): ?>
+          <option value="<?= e($k) ?>" <?= $r['status'] === $k ? 'selected' : '' ?>><?= e($label) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </td>
     <td><?= e($r['source']) ?></td>
     <td>
       <a class="btn-sm" href="<?= base_url('admin/lead-detail.php?id=' . $r['id']) ?>">عرض</a>
@@ -77,6 +105,33 @@
   </table>
   </div>
 </form>
+
+<!-- Inline status changes post here. Kept out of the bulk form so a status
+     change can never be submitted as a delete. -->
+<form method="post" id="statusForm" style="display:none">
+  <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+  <input type="hidden" name="qs" value="<?= e($currentQs) ?>">
+  <input type="hidden" name="lead_id" id="statusLeadId">
+  <input type="hidden" name="status"  id="statusValue">
+</form>
+
+<script>
+(function () {
+  document.querySelectorAll('.inline-status').forEach(function (sel) {
+    var original = sel.value;
+    sel.addEventListener('change', function () {
+      if (!confirm('تغيير حالة الطلب #' + sel.dataset.id + ' إلى «' +
+                   sel.options[sel.selectedIndex].text + '»؟')) {
+        sel.value = original;
+        return;
+      }
+      document.getElementById('statusLeadId').value = sel.dataset.id;
+      document.getElementById('statusValue').value  = sel.value;
+      document.getElementById('statusForm').submit();
+    });
+  });
+})();
+</script>
 
 <?php
 $totalPages = max(1, (int)ceil($res['total'] / $res['per_page']));

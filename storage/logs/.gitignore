@@ -1,0 +1,3 @@
+# Log files are per-machine and can contain customer context.
+*.log
+!.gitignore

@@ -17,7 +17,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      APP_NAME: ${APP_NAME:-lp_tifaw}
+      APP_NAME: ${APP_NAME:-tujjar.store}
       APP_ENV: ${APP_ENV:-production}
       # Empty on purpose — the site is served at the domain root.
       APP_BASE_URL: ""
@@ -42,6 +42,10 @@ services:
       # Admin-uploaded product images. gitignored in the repo, so the volume is
       # the only copy — back it up before destroying the stack.
       - uploads:/var/www/html/uploads
+      # Scheduled database dumps and application logs. Without this volume both
+      # are inside the container filesystem and vanish on every redeploy —
+      # which would make the nightly backup a backup of nothing.
+      - storage:/var/www/html/storage
       - sessions:/var/lib/php/sessions
     networks: [internal]
     labels:
@@ -89,6 +93,7 @@ services:
 
 volumes:
   uploads:
+  storage:
   sessions:
   dbdata:
 

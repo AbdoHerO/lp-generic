@@ -1,7 +1,12 @@
+<?php $__logoLight = store_logo_url(true); ?>
 <footer class="site-footer">
   <div class="container ftr">
     <div class="ftr-brand">
-      <div class="brand"><span class="brand-mark">◆</span> <?= e(settings_get('store_name','متجر')) ?></div>
+      <?php if ($__logoLight): ?>
+        <img class="ftr-logo" src="<?= e($__logoLight) ?>" alt="<?= e(settings_get('store_name','متجر')) ?>">
+      <?php else: ?>
+        <div class="brand"><span class="brand-mark">◆</span> <?= e(settings_get('store_name','متجر')) ?></div>
+      <?php endif; ?>
       <p class="ftr-tag">تجربة تسوق راقية مع الدفع عند الاستلام في كل المغرب.</p>
     </div>
     <nav class="ftr-nav">

@@ -1,3 +1,20 @@
+<?php if (!empty($dupes)): ?>
+<div class="al warn dupe-alert">
+  <strong>هذا الرقم لديه <?= count($dupes) ?> طلب آخر في آخر 30 يوم:</strong>
+  <ul>
+    <?php foreach ($dupes as $d): ?>
+      <li>
+        <a href="<?= base_url('admin/lead-detail.php?id=' . (int)$d['id']) ?>">#<?= (int)$d['id'] ?></a>
+        — <?= e($d['product_title'] ?? '-') ?>
+        · <?= e(number_format((float)$d['total_price'], 2)) ?> د.م
+        · <span class="st st-<?= e($d['status']) ?>"><?= e($d['status']) ?></span>
+        · <?= e($d['created_at']) ?>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+</div>
+<?php endif; ?>
+
 <?php
 $statusLabels = [
   'new' => 'جديد',

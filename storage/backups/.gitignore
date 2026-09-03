@@ -1,0 +1,4 @@
+# Database dumps contain customer names, phones and addresses.
+*.sql
+*.sql.gz
+!.gitignore

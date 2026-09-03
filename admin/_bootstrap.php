@@ -3,12 +3,47 @@ require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../src/Models/Product.php';
 require_once __DIR__ . '/../src/Models/Lead.php';
 require_once __DIR__ . '/../src/Models/Settings.php';
+require_once __DIR__ . '/../src/Models/Pixel.php';
+require_once __DIR__ . '/../src/Models/Throttle.php';
+require_once __DIR__ . '/../src/Models/SecurityAudit.php';
+require_once __DIR__ . '/../src/Models/Sections.php';
+require_once __DIR__ . '/../src/Models/Image.php';
+require_once __DIR__ . '/../src/Models/Admin.php';
+require_once __DIR__ . '/../src/Models/Activity.php';
+require_once __DIR__ . '/../src/Models/Log.php';
 
 function admin_require_auth(): void {
     if (empty($_SESSION['admin_id'])) {
         redirect(base_url('admin/login.php'));
     }
 }
+
+/**
+ * Refuse a page an agent may not open.
+ *
+ * Called at the top of every admin-only entry point rather than checked once in
+ * a layout: the navigation hiding a link is a courtesy, not a control, and the
+ * URL is still typeable.
+ */
+function admin_require_admin(): void {
+    admin_require_auth();
+    if (!Admin::isAdmin()) {
+        http_response_code(403);
+        $store = settings_get('store_name', 'tujjar.store');
+        echo '<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">'
+           . '<title>غير مسموح</title><link rel="stylesheet" href="' . e(asset('css/theme.css')) . '">'
+           . '<link rel="stylesheet" href="' . e(asset('css/admin.css')) . '"></head>'
+           . '<body class="admin-login"><div class="login-card"><h1>غير مسموح</h1>'
+           . '<p class="hint">هذه الصفحة متاحة لحسابات المدير فقط. حسابك الحالي: '
+           . e(Admin::ROLES[Admin::role()] ?? Admin::role()) . '.</p>'
+           . '<a class="btn-buy" href="' . e(base_url('admin/leads.php')) . '">الذهاب إلى الطلبات</a>'
+           . '</div></body></html>';
+        exit;
+    }
+}
+
+function admin_role(): string { return Admin::role(); }
+function admin_is_admin(): bool { return Admin::isAdmin(); }
 function admin_id(): ?int { return $_SESSION['admin_id'] ?? null; }
 function admin_username(): ?string { return $_SESSION['admin_username'] ?? null; }
 
@@ -45,7 +80,12 @@ function admin_upload_image(string $fileField, ?string $existing = null, ?string
         $name = 'p_' . bin2hex(random_bytes(8)) . '.' . $ext;
         $dest = __DIR__ . '/../uploads/' . $name;
         if (!is_dir(dirname($dest))) @mkdir(dirname($dest), 0775, true);
-        if (move_uploaded_file($f['tmp_name'], $dest)) return 'uploads/' . $name;
+        if (move_uploaded_file($f['tmp_name'], $dest)) {
+            // Resized WebP copies for srcset. Best-effort: a failure here leaves
+            // the original in place and the page simply serves that.
+            Image::generate('uploads/' . $name);
+            return 'uploads/' . $name;
+        }
     }
     try_url:
     // 2. Try URL field
@@ -87,7 +127,10 @@ function admin_upload_multi(string $fileField, ?string $urlField = null): array 
             $name = 'p_' . bin2hex(random_bytes(8)) . '.' . $ext;
             $dest = __DIR__ . '/../uploads/' . $name;
             if (!is_dir(dirname($dest))) @mkdir(dirname($dest), 0775, true);
-            if (move_uploaded_file($tmp, $dest)) $out[] = 'uploads/' . $name;
+            if (move_uploaded_file($tmp, $dest)) {
+                Image::generate('uploads/' . $name);
+                $out[] = 'uploads/' . $name;
+            }
         }
     }
 

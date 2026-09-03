@@ -4,6 +4,10 @@
 config/config.local.php
 config/config.prod.php
 
+# Secrets read by config/env.php on hosts without real environment variables.
+config/.env
+!config/.env.example
+
 # The deployment environment file. Jenkins decodes it into the workspace from
 # the encrypted CloudForge credential and removes it in the post block; it must
 # never be committed, including when a build is interrupted mid-run.

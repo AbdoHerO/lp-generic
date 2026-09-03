@@ -41,7 +41,10 @@
         <div class="units-wrap"></div>
       </div>`;
 
-    card.querySelector('.offer-head').addEventListener('click', () => selectOffer(o.id));
+    card.querySelector('.offer-head').addEventListener('click', () => {
+      selectOffer(o.id);
+      trackOffer('add_to_cart', o);
+    });
     offersList.appendChild(card);
 
     // Pre-render units inside this offer so radios persist across switches
@@ -116,7 +119,24 @@
     if (scPrice)   scPrice.textContent = `${fmt(offer.total_price)} د.م`;
   }
 
-  /* Default selection */
+  /* Pixel helper — same payload shape for every offer-driven event. */
+  function trackOffer(intent, offer, extra) {
+    if (!window.LPX || !offer) return;
+    const payload = {
+      id: D.slug || D.productId,
+      name: D.title,
+      value: offer.total_price,
+      price: offer.total_price,
+      quantity: offer.quantity,
+      currency: D.currency || 'MAD'
+    };
+    if (extra) Object.assign(payload, extra);
+    window.LPX.track(intent, payload);
+  }
+
+  /* Default selection. Deliberately not tracked: preselecting the recommended
+     offer on load is not a user intent, and counting it would make AddToCart
+     equal to page views. */
   const def = D.offers.find(o => o.is_default === 1) || D.offers[0];
   if (def) selectOffer(def.id);
 
@@ -235,26 +255,163 @@
         return showError('الرجاء إدخال العنوان الكامل', address);
       }
 
-      // Disable button to prevent double-submit
+      // Everything validated — this is a real checkout attempt.
+      if (window.LPX) {
+        window.LPX.identify({ phone_number: phone.value.trim() });
+        trackOffer('initiate_checkout', offer);
+      }
+
       const btn = form.querySelector('button[type=submit]');
+      const btnText = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = '... جاري إرسال الطلب'; }
+
+      /* Submit over fetch instead of navigating.
+         Three things this buys: the shopper stays on the page while it saves,
+         the back button cannot resubmit, and — the reason it matters most —
+         Purchase fires on a page that is still open. Firing a pixel during a
+         redirect is how conversions get dropped on slow mobile connections.
+         If fetch is unavailable or the request fails, the normal form POST
+         still runs, so nothing depends on this path succeeding. */
+      if (!window.fetch || !window.FormData) return;
+      e.preventDefault();
+
+      const data = new FormData(form);
+      data.append('ajax', '1');
+
+      fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      })
+        .then(r => r.json().then(j => ({ status: r.status, body: j })))
+        .then(({ body }) => {
+          if (!body || !body.ok) {
+            if (btn) { btn.disabled = false; btn.textContent = btnText; }
+            return showError((body && body.error) || 'تعذر إرسال الطلب، حاول مرة أخرى');
+          }
+
+          if (window.LPX && body.purchase) {
+            if (body.purchase.phone) window.LPX.identify({ phone_number: body.purchase.phone });
+            window.LPX.track('purchase', body.purchase);
+            window.LPX.track('lead', Object.assign({}, body.purchase, {
+              event_id: body.purchase.event_id + '.lead'
+            }));
+          }
+
+          showSuccess(body);
+        })
+        .catch(() => {
+          /* Network failure: fall back to a plain POST rather than stranding a
+             shopper who has already filled everything in. form.submit() does
+             not fire the submit event, so this cannot loop back into here. */
+          form.submit();
+        });
     });
+
+    /* Replaces the form with a confirmation in place, then moves on. The
+       redirect still happens so the thank-you URL is shareable and the back
+       button lands somewhere sensible — but the pixel has already fired. */
+    function showSuccess(body) {
+      const panel = document.createElement('div');
+      panel.className = 'order-done';
+      panel.innerHTML =
+        '<div class="od-icon">✓</div>' +
+        '<h3>تم استلام طلبك بنجاح</h3>' +
+        (body.order_id ? '<p class="od-ref">رقم الطلب: <strong>#' + Number(body.order_id) + '</strong></p>' : '') +
+        '<p>سيتواصل معك فريقنا هاتفياً لتأكيد الطلب قبل الشحن.</p>';
+      form.replaceWith(panel);
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      const sticky = document.getElementById('stickyCta');
+      if (sticky) sticky.classList.remove('show');
+
+      if (body.redirect) setTimeout(() => { window.location.href = body.redirect; }, 1200);
+    }
   }
+
+  /* ---------- Abandoned-form capture ----------
+     Sends the phone number once it is complete and valid, so a shopper who
+     leaves before submitting can still be called back. Sent at most once per
+     value, never on every keystroke, and the response is ignored — nothing on
+     the page changes and the shopper is never interrupted. */
+  (function () {
+    if (!form || !window.fetch || !window.FormData) return;
+
+    const phoneEl = form.querySelector('input[name=phone]');
+    const nameEl  = form.querySelector('input[name=fullname]');
+    if (!phoneEl) return;
+
+    let lastSent = '';
+    let timer = null;
+
+    function send() {
+      const phone = phoneEl.value.trim();
+      if (!/^0[6-7]\d{8}$/.test(phone) || phone === lastSent) return;
+      lastSent = phone;
+
+      const fd = new FormData();
+      fd.append('product_id', D.productId);
+      fd.append('phone', phone);
+      fd.append('fullname', nameEl ? nameEl.value.trim() : '');
+      fd.append('offer_id', offerInput.value || '');
+      const ts = form.querySelector('input[name=form_ts]');
+      if (ts) fd.append('form_ts', ts.value);
+
+      fetch(D.draftUrl, { method: 'POST', body: fd, credentials: 'same-origin', keepalive: true })
+        .catch(function () { /* a lost draft is not worth telling anyone about */ });
+    }
+
+    /* Debounced: a number is only complete once typing stops. */
+    phoneEl.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(send, 1200);
+    });
+    phoneEl.addEventListener('blur', send);
+
+    /* The moment that matters most: the tab is closing. keepalive lets the
+       request outlive the page. */
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') send();
+    });
+  })();
 
   /* ---------- Countdown ---------- */
   const cdRoot = document.getElementById('countdown');
   if (cdRoot) {
     const HOURS = parseInt(cdRoot.dataset.hours || '25', 10);
+    /* A real campaign deadline, when the page has one: it is the same instant
+       for every visitor and it actually ends. Without one, fall back to the
+       per-visitor rolling timer. */
+    const fixedEnd = cdRoot.dataset.ends ? Number(cdRoot.dataset.ends) * 1000 : 0;
     const KEY = 'lp_cd_end_' + (D.productId || 'p');
-    let end = parseInt(localStorage.getItem(KEY) || '0', 10);
-    if (!end || end < Date.now()) {
-      end = Date.now() + HOURS * 60 * 60 * 1000;
-      localStorage.setItem(KEY, String(end));
+    let end;
+
+    if (fixedEnd) {
+      end = fixedEnd;
+    } else {
+      end = parseInt(localStorage.getItem(KEY) || '0', 10);
+      if (!end || end < Date.now()) {
+        end = Date.now() + HOURS * 60 * 60 * 1000;
+        localStorage.setItem(KEY, String(end));
+      }
     }
     const $ = id => cdRoot.querySelector('#' + id);
+    let timer;
     function tick() {
       let dist = end - Date.now();
       if (dist < 0) {
+        if (fixedEnd) {
+          /* A real deadline that has passed stays passed. Restarting it is
+             what made the old timer meaningless. */
+          cdRoot.classList.add('cd-ended');
+          ['cdD', 'cdH', 'cdM', 'cdS'].forEach(function (id) {
+            var el = cdRoot.querySelector('#' + id);
+            if (el) el.textContent = '00';
+          });
+          clearInterval(timer);
+          return;
+        }
         end = Date.now() + HOURS * 60 * 60 * 1000;
         localStorage.setItem(KEY, String(end));
         dist = end - Date.now();
@@ -270,6 +427,6 @@
       $('cdS').textContent = pad(s);
     }
     tick();
-    setInterval(tick, 1000);
+    timer = setInterval(tick, 1000);
   }
 })();

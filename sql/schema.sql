@@ -13,11 +13,19 @@ DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS admins;
 DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS pixels;
+DROP TABLE IF EXISTS schema_migrations;
+DROP TABLE IF EXISTS throttle_hits;
+DROP TABLE IF EXISTS activity_log;
+DROP TABLE IF EXISTS lead_drafts;
 
 CREATE TABLE admins (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(80) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin','agent') NOT NULL DEFAULT 'admin',   -- agent: orders only
+  status TINYINT(1) NOT NULL DEFAULT 1,
+  last_login_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -43,6 +51,15 @@ CREATE TABLE products (
   seo_title VARCHAR(200) NULL,
   seo_description VARCHAR(300) NULL,
   og_image VARCHAR(255) NULL,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,   -- soft delete: hidden, but orders survive
+  accent_color VARCHAR(9) NULL,     -- per-page theme, for ad message-match
+  cta_color VARCHAR(9) NULL,
+  campaign_ends_at DATETIME NULL,   -- a real deadline, not the rolling timer
+  ab_enabled TINYINT(1) NOT NULL DEFAULT 0,
+  ab_split TINYINT UNSIGNED NOT NULL DEFAULT 50,
+  sections_json_b LONGTEXT NULL,    -- variant B content
+  fb_pixel_id INT NULL,             -- NULL = inherit default, 0 = off, N = pixels.id
+  tt_pixel_id INT NULL,             -- NULL = inherit default, 0 = off, N = pixels.id
   sections_json LONGTEXT NULL,      -- hero/features/testimonials/faqs/cta/policies
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -108,6 +125,7 @@ CREATE TABLE leads (
   notes VARCHAR(500) NULL,
   status ENUM('new','called','confirmed','shipped','delivered','cancelled','no_answer') DEFAULT 'new',
   source VARCHAR(40) NULL,        -- facebook/tiktok/google/direct
+  ab_variant CHAR(1) NULL,        -- 'a' | 'b' when the page is split-testing
   utm_source VARCHAR(120) NULL,
   utm_medium VARCHAR(120) NULL,
   utm_campaign VARCHAR(120) NULL,
@@ -140,6 +158,65 @@ CREATE TABLE lead_status_logs (
   admin_id INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_lsl_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE pixels (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  platform ENUM('facebook','tiktok') NOT NULL,
+  name VARCHAR(120) NOT NULL,           -- friendly label shown in the admin dropdown
+  pixel_id VARCHAR(80) NOT NULL,        -- the real Meta / TikTok pixel id
+  access_token TEXT NULL,               -- reserved for the Conversions API (server-side)
+  test_event_code VARCHAR(40) NULL,
+  is_default TINYINT(1) DEFAULT 0,      -- one default per platform
+  status TINYINT(1) DEFAULT 1,
+  notes VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_pixels_platform_pid (platform, pixel_id),
+  INDEX idx_pixels_platform (platform, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE lead_drafts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  product_id INT NULL,
+  phone VARCHAR(40) NOT NULL,
+  fullname VARCHAR(160) NULL,
+  offer_id INT NULL,
+  source VARCHAR(40) NULL,
+  converted TINYINT(1) NOT NULL DEFAULT 0,   -- 1 once the order was actually placed
+  ip VARCHAR(64) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_draft_phone_product (phone, product_id),
+  INDEX idx_drafts_created (created_at, converted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE activity_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT NULL,
+  admin_name VARCHAR(80) NULL,
+  action VARCHAR(40) NOT NULL,          -- create | update | delete | login | ...
+  entity VARCHAR(40) NOT NULL,          -- product | pixel | settings | category | ...
+  entity_id INT NULL,
+  summary VARCHAR(255) NULL,
+  ip VARCHAR(64) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_activity_created (created_at),
+  INDEX idx_activity_entity (entity, entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE throttle_hits (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  bucket VARCHAR(64) NOT NULL,          -- login:{user}:{ip} | lead:{ip}
+  ip VARCHAR(64) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_throttle_bucket (bucket, created_at),
+  INDEX idx_throttle_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE schema_migrations (
+  version VARCHAR(64) PRIMARY KEY,
+  applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE settings (

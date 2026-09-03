@@ -35,7 +35,7 @@ $bool = static function (string $k, bool $default) : bool {
 
 $config = [
     "app" => [
-        "name" => $str("APP_NAME", "متجر تيفاو"),
+        "name" => $str("APP_NAME", "tujjar.store"),
         // Served at the domain root, so this is deliberately empty: Router
         // strips base_url as a prefix and "" means "strip nothing".
         "base_url" => getenv("APP_BASE_URL") === false ? "" : (string) getenv("APP_BASE_URL"),
@@ -142,7 +142,9 @@ if (!$row) {
 '
 
 # The volume mount owns these paths, not the image, so re-assert on every start.
-chown www-data:www-data "$APP_ROOT/uploads" /var/lib/php/sessions
+mkdir -p "$APP_ROOT/storage/logs" "$APP_ROOT/storage/backups"
+chown -R www-data:www-data "$APP_ROOT/uploads" "$APP_ROOT/storage" /var/lib/php/sessions
 chmod 755 "$APP_ROOT/uploads"
+chmod 700 "$APP_ROOT/storage/backups"
 
 exec "$@"

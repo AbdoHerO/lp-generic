@@ -27,4 +27,7 @@ admin_render('lead-detail', [
     'items' => $items,
     'logs'  => $logs,
     'product' => $product,
+    // Shown before the confirmation call: a repeat number is either a returning
+    // customer or an accidental double order, and both change what you say.
+    'dupes' => Lead::duplicatesFor($lead['phone'], (int)$lead['id']),
 ]);

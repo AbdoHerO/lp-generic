@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../Models/Product.php';
+require_once __DIR__ . '/../Models/Sections.php';
+require_once __DIR__ . '/../Models/Experiment.php';
 
 class ProductController {
     public function show(string $slug): void {
@@ -17,7 +19,12 @@ class ProductController {
         $offers  = Product::offers((int)$product['id']);
         $groups  = Product::optionGroups((int)$product['id']);
         $related = Product::related((int)$product['id'], 4);
-        $sections = json_decode($product['sections_json'] ?? '{}', true) ?: [];
+        // A/B: which content this visitor sees. Returns variant null and the
+        // usual sections when the page is not testing.
+        $ab = Experiment::resolve($product);
+
+        // Decides which Meta / TikTok pixels the layout injects for THIS page.
+        pixel_context_set($product);
 
         render('product', [
             'title'    => $product['seo_title'] ?: $product['title'],
@@ -28,7 +35,11 @@ class ProductController {
             'offers'   => $offers,
             'groups'   => $groups,
             'related'  => $related,
-            'sections' => $sections,
+            'sections' => $ab['sections'],
+            'abVariant' => $ab['variant'],
+            // A page can carry the colours of the creative that sent the visitor.
+            'pageAccent' => $product['accent_color'] ?: null,
+            'pageCta'    => $product['cta_color'] ?: null,
         ]);
     }
 }

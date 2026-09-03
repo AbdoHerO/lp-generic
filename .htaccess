@@ -3,8 +3,17 @@ RewriteEngine On
 # RewriteBase auto-adapts: '/' on subdomain root, '/lp_tifaw/' on XAMPP subfolder.
 # We use no RewriteBase and rely on the ^ anchor instead — works in both environments.
 
-# Block direct access to source folders
-RewriteRule ^(config|src|sql)/ - [F,L]
+# Block direct access to source, tooling and data folders.
+# bin/ matters most: bin/db.php can drop the database, and Apache would happily
+# execute it as a normal PHP file since the rule below serves any real file.
+RewriteRule ^(config|src|sql|bin|tests|docker|storage)/ - [F,L]
+
+# Documentation and dotfiles are real files in the web root, so the "serve real
+# files" rule below would hand them out verbatim — including the architecture
+# and security notes in DOCUMENTATION.md.
+RewriteRule \.(md|sql|sh|yml|yaml|dist|example)$ - [F,L]
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
+RewriteRule ^(Dockerfile|Jenkinsfile|docker-compose\.yml)$ - [F,L]
 
 # Allow real files & directories (assets, uploads, admin folder)
 RewriteCond %{REQUEST_FILENAME} -f [OR]

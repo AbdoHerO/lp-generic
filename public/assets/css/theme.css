@@ -41,6 +41,7 @@ button{ font-family: inherit; cursor: pointer; }
 .brand{ display:flex; align-items:center; gap:8px; font-weight:800; font-size: 18px; min-width:0; }
 .brand-mark{ color: var(--accent); font-size: 20px; }
 .brand-name{ font-family: var(--serif); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.brand-logo{ height: 42px; width:auto; max-width: 190px; object-fit: contain; }
 .search{ flex:1; min-width:0; display:flex; align-items:center; background: var(--bg); border:1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
 .search input{ flex:1; min-width:0; border:0; background: transparent; padding: 8px 6px; font-family: inherit; font-size: 14px; outline: none; }
 .search button{ background: transparent; border:0; font-size: 18px; color: var(--ink-2); flex:none; }
@@ -49,6 +50,7 @@ button{ font-family: inherit; cursor: pointer; }
 @media (max-width: 600px){
   .hdr{ gap: 8px; padding: 10px 12px; }
   .brand{ font-size: 16px; }
+  .brand-logo{ height: 34px; max-width: 150px; }
   .hdr-cta{ padding: 7px 10px; font-size: 12px; }
   .search input{ font-size: 13px; padding: 6px 4px; }
   .trust-strip{ gap: 10px; padding: 7px 10px; font-size: 11px; }
@@ -60,6 +62,7 @@ button{ font-family: inherit; cursor: pointer; }
 /* ===== Footer ===== */
 .site-footer{ margin-top: 64px; background: #1a1a1a; color: #d8d2c2; }
 .ftr{ display:grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; padding: 36px 18px; }
+.ftr-logo{ height: 46px; width:auto; max-width: 210px; object-fit: contain; margin-bottom: 10px; }
 .ftr-tag{ color: #aea899; font-size: 14px; }
 .ftr-nav{ display:flex; flex-direction:column; gap: 8px; }
 .ftr-nav a{ color: #d8d2c2; font-size: 14px; }
@@ -98,3 +101,6 @@ button{ font-family: inherit; cursor: pointer; }
 .sec-title{ font-family: var(--serif); font-size: 24px; margin: 30px 0 16px; }
 .sec-title.sm{ font-size: 18px; margin: 18px 0 10px; }
 .empty{ text-align:center; color: var(--muted); padding: 40px 0; }
+
+.order-ref{ color: var(--muted); font-size: 14px; margin: 0 0 4px; }
+.order-ref strong{ color: var(--ink); }

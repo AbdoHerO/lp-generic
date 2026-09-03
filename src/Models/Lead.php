@@ -6,11 +6,11 @@ class Lead {
         try {
             $sql = "INSERT INTO leads
               (product_id, product_slug, offer_id, offer_label, quantity, total_price,
-               fullname, phone, city, address, notes, status, source,
+               fullname, phone, city, address, notes, status, source, ab_variant,
                utm_source, utm_medium, utm_campaign, fbclid, ttclid, gclid, ip, user_agent)
               VALUES
               (:product_id, :product_slug, :offer_id, :offer_label, :quantity, :total_price,
-               :fullname, :phone, :city, :address, :notes, 'new', :source,
+               :fullname, :phone, :city, :address, :notes, 'new', :source, :ab_variant,
                :utm_source, :utm_medium, :utm_campaign, :fbclid, :ttclid, :gclid, :ip, :user_agent)";
             $st = $pdo->prepare($sql);
             $st->execute($data);
@@ -96,6 +96,46 @@ class Lead {
             $pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Other orders from the same phone in the last N days.
+     *
+     * A repeat number is either a returning customer worth prioritising or the
+     * same person ordering twice by accident — both are worth seeing before the
+     * confirmation call, and neither is visible today.
+     */
+    public static function duplicatesFor(string $phone, int $excludeLeadId = 0, int $days = 30): array {
+        $digits = preg_replace('/\D/', '', $phone) ?? '';
+        if (strlen($digits) < 8) return [];
+
+        $st = db()->prepare("SELECT l.id, l.fullname, l.status, l.total_price, l.created_at,
+                                    p.title AS product_title
+                             FROM leads l LEFT JOIN products p ON p.id = l.product_id
+                             WHERE l.phone = :phone AND l.id <> :id
+                               AND l.created_at >= (NOW() - INTERVAL :days DAY)
+                             ORDER BY l.id DESC LIMIT 10");
+        $st->bindValue(':phone', $phone);
+        $st->bindValue(':id', $excludeLeadId, PDO::PARAM_INT);
+        $st->bindValue(':days', $days, PDO::PARAM_INT);
+        $st->execute();
+        return $st->fetchAll();
+    }
+
+    /** Phones that appear on more than one order in the window, for the list badge. */
+    public static function duplicatePhones(array $leadRows, int $days = 30): array {
+        $phones = array_values(array_unique(array_filter(array_column($leadRows, 'phone'))));
+        if (!$phones) return [];
+
+        $in = implode(',', array_fill(0, count($phones), '?'));
+        $st = db()->prepare("SELECT phone, COUNT(*) AS n FROM leads
+                             WHERE phone IN ($in) AND created_at >= (NOW() - INTERVAL ? DAY)
+                             GROUP BY phone HAVING n > 1");
+        $st->execute(array_merge($phones, [$days]));
+
+        $out = [];
+        foreach ($st->fetchAll() as $r) $out[$r['phone']] = (int)$r['n'];
+        return $out;
     }
 
     public static function statusLogs(int $leadId): array {
@@ -184,7 +224,12 @@ class Lead {
         curl_close($ch);
         // Log failure silently (won't break the order flow)
         if ($httpCode < 200 || $httpCode >= 300) {
-            error_log("SheetDB sync failed: HTTP $httpCode — $resp");
+            require_once __DIR__ . '/Log.php';
+            Log::error('SheetDB rejected a lead', [
+                'http'     => $httpCode,
+                'response' => substr((string)$resp, 0, 300),
+                'lead_id'  => $lead['id'] ?? null,
+            ]);
         }
     }
 }

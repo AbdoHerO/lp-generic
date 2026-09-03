@@ -24,6 +24,7 @@ class HomeController {
             'cats'     => $cats,
             'q'        => $q,
             'currentCat' => null,
+            'noindex'  => true,   // thin, infinite, and never a landing page
         ]);
     }
 

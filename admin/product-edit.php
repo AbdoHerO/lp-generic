@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/_bootstrap.php';
-admin_require_auth();
+admin_require_admin();
 
 $id = (int)($_GET['id'] ?? 0);
 $pdo = db();
@@ -8,15 +8,27 @@ $product = null;
 $msg = null;
 
 if ($id) {
-    $st = $pdo->prepare("SELECT * FROM products WHERE id=:i");
-    $st->execute([':i' => $id]);
-    $product = $st->fetch();
+    $product = Product::findAny($id);
     if (!$product) redirect(base_url('admin/products.php'));
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     admin_require_csrf();
     $action = $_POST['action'] ?? 'save';
+
+    // Start from a template: creates an inactive product with content, option
+    // groups and pricing tiers already in place, then opens it for editing.
+    if ($action === 'from_template') {
+        $title = clean_string($_POST['title'] ?? '', 180) ?: 'منتج جديد';
+        try {
+            $newId = PageTemplate::apply((string)($_POST['template'] ?? ''), $title);
+            Activity::log('create', 'product', $newId, 'from template: ' . ($_POST['template'] ?? ''));
+            redirect(base_url('admin/product-edit.php?id=' . $newId . '&from_template=1'));
+        } catch (Throwable $e) {
+            Log::exception('Template apply failed', $e, ['template' => $_POST['template'] ?? '']);
+            $msg = 'تعذر إنشاء المنتج من القالب';
+        }
+    }
 
     if ($action === 'save') {
         $title = clean_string($_POST['title'] ?? '', 180);
@@ -27,14 +39,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cover = admin_upload_image('cover_image', $product['cover_image'] ?? null, 'cover_image_url');
         $og    = admin_upload_image('og_image',    $product['og_image']    ?? null, 'og_image_url');
 
-        $sectionsJson = $_POST['sections_json'] ?? '{}';
-        // validate JSON
-        if (json_decode($sectionsJson, true) === null && trim($sectionsJson) !== '') {
-            $msg = 'JSON غير صالح في الأقسام، تم الحفظ بالقيمة السابقة';
-            $sectionsJson = $product['sections_json'] ?? '{}';
+        // Landing-page content. The editor posts structured fields; the JSON
+        // pane posts a raw string. sections_mode says which one the operator was
+        // actually looking at, so the two panes can never fight over the column.
+        $existing = Sections::decode($product['sections_json'] ?? null);
+
+        if (($_POST['sections_mode'] ?? 'form') === 'json') {
+            $parsed = Sections::validateJson($_POST['sections_json'] ?? '');
+            if ($parsed['ok']) {
+                $sectionsJson = Sections::encode($parsed['sections']);
+            } else {
+                // Keeping the previous value is safer than saving a broken page,
+                // but it must be said out loud — a silent revert reads as "my
+                // edit did not save" with no reason given.
+                $msg = 'JSON غير صالح (' . $parsed['error'] . ') — تم الاحتفاظ بالمحتوى السابق';
+                $sectionsJson = Sections::encode($existing);
+            }
+        } else {
+            $sectionsJson = Sections::encode(Sections::fromPost($_POST, $existing));
+        }
+
+        // Pixel choice per landing page: '' → inherit the platform default,
+        // '0' → fire nothing for that platform here, N → pixels.id = N.
+        $pixelChoice = static function (string $field) {
+            $raw = $_POST[$field] ?? '';
+            return $raw === '' ? null : (int)$raw;
+        };
+
+        // Campaign options. "Use the store colour" is stored as NULL rather
+        // than a copy of the current store colour, so changing the store theme
+        // later still reaches these pages.
+        $accent = empty($_POST['accent_color_clear']) ? clean_string($_POST['accent_color'] ?? '', 9) : '';
+        $cta    = empty($_POST['cta_color_clear'])    ? clean_string($_POST['cta_color'] ?? '', 9)    : '';
+        $endsAt = trim((string)($_POST['campaign_ends_at'] ?? ''));
+        $endsTs = $endsAt !== '' ? strtotime($endsAt) : false;
+
+        // Variant B is stored raw only when it parses; a broken variant would
+        // otherwise blank the page for half the traffic.
+        $variantB = trim((string)($_POST['sections_json_b'] ?? ''));
+        if ($variantB !== '') {
+            $parsedB = Sections::validateJson($variantB);
+            if ($parsedB['ok']) {
+                $variantB = Sections::encode($parsedB['sections']);
+            } else {
+                $msg = 'JSON النسخة B غير صالح (' . $parsedB['error'] . ') — تم الاحتفاظ بالنسخة السابقة';
+                $variantB = (string)($product['sections_json_b'] ?? '');
+            }
         }
 
         $data = [
+            ':accent_color'     => preg_match('/^#[0-9a-f]{6}$/i', $accent) ? $accent : null,
+            ':cta_color'        => preg_match('/^#[0-9a-f]{6}$/i', $cta) ? $cta : null,
+            ':campaign_ends_at' => $endsTs ? date('Y-m-d H:i:s', $endsTs) : null,
+            ':ab_enabled'       => (!empty($_POST['ab_enabled']) && $variantB !== '') ? 1 : 0,
+            ':ab_split'         => max(1, min(99, (int)($_POST['ab_split'] ?? 50))),
+            ':sections_json_b'  => $variantB !== '' ? $variantB : null,
             ':category_id'    => (int)($_POST['category_id'] ?? 0) ?: null,
             ':title'          => $title,
             ':slug'           => $slug,
@@ -48,6 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':seo_title'      => clean_string($_POST['seo_title'] ?? '', 200),
             ':seo_description'=> clean_string($_POST['seo_description'] ?? '', 300),
             ':og_image'       => $og,
+            ':fb_pixel_id'    => $pixelChoice('fb_pixel_id'),
+            ':tt_pixel_id'    => $pixelChoice('tt_pixel_id'),
             ':sections_json'  => $sectionsJson,
         ];
 
@@ -57,15 +118,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     short_desc=:short_desc, full_desc=:full_desc, cover_image=:cover_image,
                     base_price=:base_price, compare_price=:compare_price, badges=:badges,
                     status=:status, seo_title=:seo_title, seo_description=:seo_description,
-                    og_image=:og_image, sections_json=:sections_json WHERE id=:id";
+                    og_image=:og_image, fb_pixel_id=:fb_pixel_id, tt_pixel_id=:tt_pixel_id,
+                    accent_color=:accent_color, cta_color=:cta_color,
+                    campaign_ends_at=:campaign_ends_at, ab_enabled=:ab_enabled,
+                    ab_split=:ab_split, sections_json_b=:sections_json_b,
+                    sections_json=:sections_json WHERE id=:id";
             $pdo->prepare($sql)->execute($data);
             $newId = $product['id'];
         } else {
-            $sql = "INSERT INTO products (category_id,title,slug,short_desc,full_desc,cover_image,base_price,compare_price,badges,status,seo_title,seo_description,og_image,sections_json)
-                    VALUES (:category_id,:title,:slug,:short_desc,:full_desc,:cover_image,:base_price,:compare_price,:badges,:status,:seo_title,:seo_description,:og_image,:sections_json)";
+            $sql = "INSERT INTO products (category_id,title,slug,short_desc,full_desc,cover_image,base_price,compare_price,badges,status,seo_title,seo_description,og_image,fb_pixel_id,tt_pixel_id,accent_color,cta_color,campaign_ends_at,ab_enabled,ab_split,sections_json_b,sections_json)
+                    VALUES (:category_id,:title,:slug,:short_desc,:full_desc,:cover_image,:base_price,:compare_price,:badges,:status,:seo_title,:seo_description,:og_image,:fb_pixel_id,:tt_pixel_id,:accent_color,:cta_color,:campaign_ends_at,:ab_enabled,:ab_split,:sections_json_b,:sections_json)";
             $pdo->prepare($sql)->execute($data);
             $newId = (int)$pdo->lastInsertId();
         }
+        Activity::log($product ? 'update' : 'create', 'product', (int)$newId, $title);
         redirect(base_url('admin/product-edit.php?id=' . $newId . '&saved=1'));
     }
 
@@ -162,12 +228,23 @@ $offers = $product ? Product::offers((int)$product['id']) : [];
 $groups = $product ? Product::optionGroups((int)$product['id']) : [];
 $media  = $product ? Product::media((int)$product['id']) : [];
 
+require_once __DIR__ . '/../src/Models/Experiment.php';
+
 admin_render('product-edit', [
+    'pixels'   => Pixel::grouped(),
+    // Results only mean something once the test has actually run.
+    'abResults' => ($product && !empty($product['ab_enabled']))
+        ? Experiment::results((int)$product['id']) : null,
+    'sections' => Sections::decode($product['sections_json'] ?? null),
     'title'   => $product ? 'تعديل: ' . $product['title'] : 'منتج جديد',
     'product' => $product,
     'cats'    => $cats,
     'offers'  => $offers,
     'groups'  => $groups,
     'media'   => $media,
-    'msg'     => $msg ?? (isset($_GET['saved']) ? 'تم الحفظ' : (isset($_GET['cloned']) ? 'تم إنشاء نسخة من المنتج. عدّل الحقول ثم فعّل الحالة.' : null)),
+    'templates' => PageTemplate::all(),
+    'msg'     => $msg ?? (isset($_GET['saved']) ? 'تم الحفظ'
+                 : (isset($_GET['cloned']) ? 'تم إنشاء نسخة من المنتج. عدّل الحقول ثم فعّل الحالة.'
+                 : (isset($_GET['from_template'])
+                    ? 'تم إنشاء الصفحة من قالب. أضف الصور والأسعار ثم فعّل المنتج.' : null))),
 ]);

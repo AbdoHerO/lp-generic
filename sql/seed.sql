@@ -4,8 +4,10 @@ INSERT INTO admins (username, password_hash) VALUES
 ('admin', '$2y$10$31tRbVMWmuJYim/yEFQ9MeHVuLXPCIbTbqhv5t0TG0tkHMtTVg6Mi');
 
 INSERT INTO settings (k, v) VALUES
-('store_name','CasaLux'),
-('store_logo','https://lucci-moriny.sirv.com/Images/cl-01.jpg'),
+('store_name','tujjar.store'),
+('store_logo','public/assets/img/logo.svg'),
+('store_logo_light','public/assets/img/logo-light.svg'),
+('store_favicon','public/assets/img/favicon.svg'),
 ('whatsapp','+212600000000'),
 ('support_phone','+212600000000'),
 ('fb_pixel_id','640658465078889'),
@@ -22,6 +24,22 @@ INSERT INTO settings (k, v) VALUES
 ('policy_privacy','<h2>سياسة الخصوصية</h2><p>نحن نحترم خصوصيتك ولا نشارك بياناتك مع أي طرف ثالث.</p>'),
 ('policy_terms','<h2>شروط الاستخدام</h2><p>باستخدامك للموقع فأنت توافق على شروطنا.</p>'),
 ('policy_refund','<h2>سياسة الإرجاع</h2><p>يمكنك إرجاع المنتج خلال 10 أيام في حال وجود عيب أو عدم رضا.</p>');
+
+-- Advertising pixels. Each landing page picks one per platform from the admin
+-- dropdown; these rows are the "default" fallback for pages left on inherit.
+INSERT INTO pixels (platform, name, pixel_id, is_default, status, notes) VALUES
+('facebook', 'Meta — الافتراضي',  '640658465078889',      1, 1, 'حساب الإعلانات الرئيسي'),
+('tiktok',   'TikTok — الافتراضي', 'CM08HVJC77U7MRPGKD5G', 1, 1, 'حساب الإعلانات الرئيسي');
+
+INSERT INTO schema_migrations (version) VALUES
+('2026_09_03_001_pixels'),
+('2026_09_03_002_product_pixel'),
+('2026_09_03_003_rebrand'),
+('2026_09_04_004_throttle'),
+('2026_09_04_005_roles_audit'),
+('2026_09_04_006_soft_delete'),
+('2026_09_04_007_page_options'),
+('2026_09_04_008_drafts');
 
 INSERT INTO categories (name, slug, position) VALUES
 ('ملابس', 'apparel', 1);

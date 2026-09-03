@@ -5,18 +5,34 @@
 <title><?= e($title ?? 'الإدارة') ?> · لوحة التحكم</title>
 <link rel="stylesheet" href="<?= asset('css/theme.css') ?>">
 <link rel="stylesheet" href="<?= asset('css/admin.css') ?>">
+<link rel="icon" href="<?= e(store_favicon_url()) ?>" type="image/svg+xml">
 </head>
 <body class="admin">
 <aside class="side" id="adminSide">
-  <div class="side-brand">◆ <?= e($store) ?></div>
+  <div class="side-brand">
+    <?php $__adminLogo = store_logo_url(true); ?>
+    <?php if ($__adminLogo): ?>
+      <img class="side-logo" src="<?= e($__adminLogo) ?>" alt="<?= e($store) ?>">
+    <?php else: ?>
+      ◆ <?= e($store) ?>
+    <?php endif; ?>
+  </div>
   <nav>
     <a href="<?= base_url('admin/index.php') ?>"    class="<?= ($_view==='dashboard'?'active':'') ?>">لوحة التحكم</a>
-    <a href="<?= base_url('admin/products.php') ?>" class="<?= (in_array($_view,['products','product-edit'])?'active':'') ?>">المنتجات</a>
     <a href="<?= base_url('admin/leads.php') ?>"    class="<?= (in_array($_view,['leads','lead-detail'])?'active':'') ?>">الطلبات</a>
+    <a href="<?= base_url('admin/drafts.php') ?>"   class="<?= ($_view==='drafts'?'active':'') ?>">لم تكتمل</a>
+    <a href="<?= base_url('admin/reports.php') ?>"  class="<?= ($_view==='reports'?'active':'') ?>">التقارير</a>
+    <?php if (admin_is_admin()): ?>
+    <a href="<?= base_url('admin/products.php') ?>" class="<?= (in_array($_view,['products','product-edit'])?'active':'') ?>">المنتجات</a>
+    <a href="<?= base_url('admin/categories.php') ?>" class="<?= ($_view==='categories'?'active':'') ?>">الفئات</a>
+    <a href="<?= base_url('admin/pixels.php') ?>"   class="<?= ($_view==='pixels'?'active':'') ?>">البكسلات</a>
+    <a href="<?= base_url('admin/users.php') ?>"    class="<?= ($_view==='users'?'active':'') ?>">المستخدمون</a>
+    <a href="<?= base_url('admin/activity.php') ?>" class="<?= ($_view==='activity'?'active':'') ?>">السجل</a>
     <a href="<?= base_url('admin/settings.php') ?>" class="<?= ($_view==='settings'?'active':'') ?>">الإعدادات</a>
+    <?php endif; ?>
   </nav>
   <div class="side-bottom">
-    <span><?= e(admin_username()) ?></span>
+    <span><?= e(admin_username()) ?><small class="role-chip"><?= e(Admin::ROLES[admin_role()] ?? '') ?></small></span>
     <a href="<?= base_url('admin/logout.php') ?>">خروج</a>
   </div>
 </aside>

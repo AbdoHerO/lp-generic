@@ -24,7 +24,8 @@
     ?>
     <a class="product-card" href="<?= base_url($p['slug']) ?>">
       <div class="pc-media">
-        <img src="<?= e($img) ?>" alt="<?= e($p['title']) ?>" loading="lazy">
+        <?= responsive_img($p['cover_image'] ?: 'public/assets/img/placeholder.svg',
+              ['alt' => $p['title'], 'sizes' => '(max-width: 700px) 50vw, 300px']) ?>
         <?php if ($badges): ?>
         <div class="pc-badges">
           <?php foreach ($badges as $b): ?><span class="pc-badge"><?= e($b) ?></span><?php endforeach; ?>

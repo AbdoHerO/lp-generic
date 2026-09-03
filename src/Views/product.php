@@ -5,10 +5,16 @@ $hero       = $sections['hero']         ?? [];
 $features   = $sections['features']     ?? [];
 $tests      = $sections['testimonials'] ?? [];
 $faqs       = $sections['faqs']         ?? [];
-$cdTitle    = $sections['countdown_title'] ?? 'تخفيض 50% و الشحن السريع بالمجان';
-$ctaTxt     = $sections['cta_text']        ?? 'إضغط هنا لطلب المنتج';
+// ?: not ??  — the editor always writes these keys, so "left blank" arrives as
+// an empty string rather than a missing key, and must still fall back.
+$cdTitle    = ($sections['countdown_title'] ?? '') ?: 'تخفيض 50% و الشحن السريع بالمجان';
+$ctaTxt     = ($sections['cta_text']        ?? '') ?: 'إضغط هنا لطلب المنتج';
 $banner     = settings_get('header_banner', 'التوصيل مجاني لجميع أنحاء المغرب');
 $cdHours    = (int)settings_get('countdown_hours', '25');
+// A real campaign deadline beats a rolling timer that resets itself forever:
+// when one is set, the page counts down to it and stops.
+$cdEndsAt   = !empty($product['campaign_ends_at']) ? strtotime($product['campaign_ends_at']) : null;
+$cdExpired  = $cdEndsAt !== null && $cdEndsAt <= time();
 $isAdminPreview = !empty($_GET['preview']) && !empty($_SESSION['admin_id']);
 
 // JSON for JS (offers + groups)
@@ -42,6 +48,14 @@ if (count($firstTwo) >= 2) {
     $specialLine = $firstTwo[0]['label'];
 }
 ?>
+<?php
+// Schema.org for the landing page. Rendered in the body rather than the head
+// because it needs $offers and $media, which only this view receives.
+$canonical = (request_is_https() ? 'https' : 'http') . '://'
+           . ($_SERVER['HTTP_HOST'] ?? '') . base_url($product['slug']);
+include __DIR__ . '/partials/structured-data.php';
+?>
+
 <?php if ($isAdminPreview): ?>
 <div class="admin-preview-bar">
   وضع المعاينة (مدير) — هذه الصفحة قد تكون غير منشورة. <a href="<?= base_url('admin/product-edit.php?id=' . (int)$product['id']) ?>">العودة للتحرير</a>
@@ -56,7 +70,14 @@ if (count($firstTwo) >= 2) {
       <?php if ($slider): ?>
         <div class="p-slides">
           <?php foreach ($slider as $i => $m): ?>
-            <img class="p-slide <?= $i===0?'active':'' ?>" src="<?= e(upload_url($m['url'])) ?>" alt="<?= e($product['title']) ?>" loading="<?= $i===0?'eager':'lazy' ?>">
+            <?= responsive_img($m['url'], [
+                  'class'   => 'p-slide ' . ($i === 0 ? 'active' : ''),
+                  'alt'     => $product['title'],
+                  // The first slide is the largest thing above the fold, so it
+                  // loads eagerly and at high priority; the rest wait.
+                  'loading' => $i === 0 ? 'eager' : 'lazy',
+                  'sizes'   => '(max-width: 700px) 100vw, 640px',
+                ]) ?>
           <?php endforeach; ?>
         </div>
         <?php if (count($slider) > 1): ?>
@@ -69,7 +90,10 @@ if (count($firstTwo) >= 2) {
         </div>
         <?php endif; ?>
       <?php else: ?>
-        <img class="p-slide active" src="<?= e($product['cover_image'] ? upload_url($product['cover_image']) : asset('img/placeholder.svg')) ?>" alt="<?= e($product['title']) ?>">
+        <?= responsive_img($product['cover_image'] ?: 'public/assets/img/placeholder.svg', [
+              'class' => 'p-slide active', 'alt' => $product['title'],
+              'loading' => 'eager', 'sizes' => '(max-width: 700px) 100vw, 640px',
+            ]) ?>
       <?php endif; ?>
     </div>
 
@@ -81,8 +105,8 @@ if (count($firstTwo) >= 2) {
         <?php endforeach; ?>
       </div>
       <?php endif; ?>
-      <h1 class="p-title"><?= e($hero['headline'] ?? $product['title']) ?></h1>
-      <p class="p-sub"><?= e($hero['subheadline'] ?? $product['short_desc']) ?></p>
+      <h1 class="p-title"><?= e(($hero['headline'] ?? '') ?: $product['title']) ?></h1>
+      <p class="p-sub"><?= e(($hero['subheadline'] ?? '') ?: $product['short_desc']) ?></p>
 
       <?php if (!empty($hero['badges'])): ?>
       <ul class="p-mini">
@@ -90,7 +114,7 @@ if (count($firstTwo) >= 2) {
       </ul>
       <?php endif; ?>
 
-      <a class="p-jump" href="#orderForm"><?= e($hero['cta'] ?? 'اطلب الآن') ?></a>
+      <a class="p-jump" href="#orderForm"><?= e(($hero['cta'] ?? '') ?: 'اطلب الآن') ?></a>
     </div>
   </div>
 </section>
@@ -105,6 +129,19 @@ if (count($firstTwo) >= 2) {
     <input type="hidden" name="fbclid"       value="<?= e($_GET['fbclid']       ?? '') ?>">
     <input type="hidden" name="ttclid"       value="<?= e($_GET['ttclid']       ?? '') ?>">
     <input type="hidden" name="gclid"        value="<?= e($_GET['gclid']        ?? '') ?>">
+
+    <?php /* Anti-bot. Both are invisible to shoppers: the honeypot is hidden by
+             CSS and skipped by the tab order, and the stamp is HMAC-signed so a
+             script cannot fabricate a plausible fill time. */ ?>
+    <div class="hp-field" aria-hidden="true">
+      <label>لا تملأ هذا الحقل
+        <input type="text" name="website" tabindex="-1" autocomplete="off" value="">
+      </label>
+    </div>
+    <input type="hidden" name="form_ts" value="<?= e(form_token()) ?>">
+    <?php if (!empty($abVariant)): ?>
+    <input type="hidden" name="ab_variant" value="<?= e($abVariant) ?>">
+    <?php endif; ?>
 
     <div class="offer-headline">
       <span class="of-special">عرض خاص !</span>
@@ -127,7 +164,15 @@ if (count($firstTwo) >= 2) {
       <label>العنوان (المدينة + الحي + الشارع)
         <input type="text" name="address" required placeholder="مثال: الدار البيضاء، حي السلام، شارع 12">
       </label>
-      <input type="hidden" name="city" value="">
+      <label>المدينة
+        <input type="text" name="city" list="moroccoCities" autocomplete="address-level2"
+               placeholder="الدار البيضاء">
+      </label>
+      <datalist id="moroccoCities">
+        <?php foreach (morocco_cities() as $__city): ?>
+          <option value="<?= e($__city) ?>"></option>
+        <?php endforeach; ?>
+      </datalist>
       <input type="hidden" name="notes" value="">
     </div>
 
@@ -142,7 +187,7 @@ if (count($firstTwo) >= 2) {
   <h2 class="sec-title" style="text-align:center">المنتج عن قرب</h2>
   <div class="gal-grid">
     <?php foreach ($gallery as $g): ?>
-      <img src="<?= e(upload_url($g['url'])) ?>" loading="lazy" alt="<?= e($product['title']) ?>">
+      <?= responsive_img($g['url'], ['alt' => $product['title'], 'sizes' => '(max-width: 700px) 100vw, 340px']) ?>
     <?php endforeach; ?>
   </div>
 </section>
@@ -178,7 +223,9 @@ if (count($firstTwo) >= 2) {
 </section>
 <?php endif; ?>
 
-<section class="p-countdown" id="countdown" data-hours="<?= $cdHours ?>">
+<?php if (!$cdExpired): ?>
+<section class="p-countdown" id="countdown" data-hours="<?= $cdHours ?>"
+         <?= $cdEndsAt ? 'data-ends="' . (int)$cdEndsAt . '"' : '' ?>>
   <h2 class="cd-title"><?= e($cdTitle) ?></h2>
   <div class="cd-grid">
     <div class="cd-cell"><div class="cd-num" id="cdD">00</div><div class="cd-lbl">يوم</div></div>
@@ -188,6 +235,7 @@ if (count($firstTwo) >= 2) {
   </div>
   <a href="#orderForm" class="cd-cta">احصل عليه الآن</a>
 </section>
+<?php endif; ?>
 
 <?php if ($faqs): ?>
 <section class="p-faq">
@@ -211,7 +259,8 @@ if (count($firstTwo) >= 2) {
       $img = $rp['cover_image'] ? upload_url($rp['cover_image']) : asset('img/placeholder.svg');
     ?>
     <a class="product-card" href="<?= base_url($rp['slug']) ?>">
-      <div class="pc-media"><img src="<?= e($img) ?>" alt="<?= e($rp['title']) ?>" loading="lazy"></div>
+      <div class="pc-media"><?= responsive_img($rp['cover_image'] ?: 'public/assets/img/placeholder.svg',
+            ['alt' => $rp['title'], 'sizes' => '(max-width: 700px) 50vw, 260px']) ?></div>
       <div class="pc-body">
         <h3 class="pc-title"><?= e($rp['title']) ?></h3>
         <div class="pc-price"><span class="pc-price-now">من <?= e(number_format((float)$rp['base_price'],0)) ?> د.م</span></div>
@@ -230,49 +279,46 @@ if (count($firstTwo) >= 2) {
 <script>
   window.PRODUCT_DATA = {
     productId: <?= (int)$product['id'] ?>,
+    slug:  <?= json_encode($product['slug'], JSON_UNESCAPED_UNICODE) ?>,
     title: <?= json_encode($product['title'], JSON_UNESCAPED_UNICODE) ?>,
+    currency: 'MAD',
+    draftUrl: <?= json_encode(base_url('lead/draft')) ?>,
     offers: <?= json_encode($jsOffers, JSON_UNESCAPED_UNICODE) ?>,
     groups: <?= json_encode($jsGroups, JSON_UNESCAPED_UNICODE) ?>
   };
+
+  /* ViewContent — fired for whichever pixels this landing page is assigned to.
+     The slug is the content id, so Meta/TikTok catalogues line up with the URL. */
+  (function () {
+    function fire() {
+      if (!window.LPX) return;
+      window.LPX.track('view_content', {
+        id: window.PRODUCT_DATA.slug,
+        name: window.PRODUCT_DATA.title,
+        value: <?= json_encode((float)($offers[0]['total_price'] ?? $product['base_price'])) ?>,
+        currency: 'MAD'
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fire);
+    else fire();
+  })();
 </script>
+<?php if (settings_get('protect_images', '1') === '1'): ?>
 <script>
-(function(){
-  /* ── Disable right-click context menu ── */
-  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-
-  /* ── Disable devtools keyboard shortcuts ── */
-  document.addEventListener('keydown', function(e){
-    // F12
-    if (e.key === 'F12') { e.preventDefault(); return false; }
-    // Ctrl/Cmd + Shift + I / J / C  (inspector, console, element picker)
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && /^[IJC]$/i.test(e.key)) { e.preventDefault(); return false; }
-    // Ctrl/Cmd + U  (view source)
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'u') { e.preventDefault(); return false; }
-    // Ctrl/Cmd + S  (save page)
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); return false; }
-    // Ctrl/Cmd + P  (print / inspect)
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); return false; }
-  });
-
-  /* ── Disable copy / cut outside form inputs ── */
-  ['copy','cut'].forEach(function(ev){
-    document.addEventListener(ev, function(e){
-      var t = e.target;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      e.preventDefault();
-    });
-  });
-
-  /* ── Disable image drag-save ── */
-  document.addEventListener('dragstart', function(e){
+/* Image protection.
+   Scoped to images on purpose. The previous version blocked right-click,
+   F12, Ctrl+U/S/P, copy and text selection across the whole page, which
+   stopped nobody who wanted the source — it is one `curl` away — while
+   preventing shoppers from copying the phone number, saving the page or
+   printing an order. Dragging and long-pressing a product photo is the only
+   part worth discouraging, so that is the only part still handled. */
+(function () {
+  document.addEventListener('dragstart', function (e) {
     if (e.target && e.target.tagName === 'IMG') e.preventDefault();
   });
-
-  /* ── Disable long-press text selection on touch (image areas) ── */
-  document.addEventListener('selectstart', function(e){
-    var t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-    e.preventDefault();
+  document.addEventListener('contextmenu', function (e) {
+    if (e.target && e.target.tagName === 'IMG') e.preventDefault();
   });
 })();
 </script>
+<?php endif; ?>

@@ -1,32 +1,70 @@
-<?php
-$sectionsTemplate = '{
-  "hero": {
-    "headline": "عنوان جذاب",
-    "subheadline": "وصف قصير يبرز القيمة",
-    "badges": ["شحن مجاني","ضمان الجودة"],
-    "cta": "اطلب الآن"
-  },
-  "features": [
-    {"icon":"✦","title":"ميزة 1","text":"شرح قصير"},
-    {"icon":"✦","title":"ميزة 2","text":"شرح قصير"}
-  ],
-  "testimonials": [
-    {"name":"أحمد","text":"منتج رائع"}
-  ],
-  "faqs": [
-    {"q":"سؤال؟","a":"جواب."}
-  ],
-  "cta_text": "اطلب الآن"
-}';
-?>
 <?php if ($msg): ?><div class="al ok"><?= e($msg) ?></div><?php endif; ?>
+
+<?php if (!$product && !empty($templates)): ?>
+<section class="tpl-picker">
+  <h3>ابدأ من قالب</h3>
+  <p class="hint">
+    القالب يملأ المحتوى ومجموعات الخيارات ومستويات العروض مسبقاً — تبقى عليك الصور والأسعار.
+    أو تجاهله واملأ النموذج أسفله يدوياً.
+  </p>
+  <form method="post" class="tpl-form">
+    <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
+    <input type="hidden" name="action" value="from_template">
+    <input type="hidden" name="template" id="tplChoice" value="">
+
+    <label class="tpl-title">
+      <span>اسم المنتج</span>
+      <input name="title" id="tplTitle" required placeholder="مثال: سروال كاجوال كلاس">
+    </label>
+
+    <div class="tpl-grid">
+      <?php foreach ($templates as $key => $t): ?>
+        <button type="button" class="tpl-card" data-key="<?= e($key) ?>">
+          <span class="tpl-icon"><?= e($t['icon'] ?? '📄') ?></span>
+          <strong><?= e($t['label'] ?? $key) ?></strong>
+          <small><?= e($t['description'] ?? '') ?></small>
+          <span class="tpl-meta">
+            <?= count($t['sections']['features'] ?? []) ?> مميزات ·
+            <?= count($t['sections']['faqs'] ?? []) ?> أسئلة ·
+            <?= count($t['offers'] ?? []) ?> عروض
+          </span>
+        </button>
+      <?php endforeach; ?>
+    </div>
+  </form>
+</section>
+
+<script>
+(function () {
+  var form  = document.querySelector('.tpl-form');
+  var title = document.getElementById('tplTitle');
+  if (!form) return;
+
+  form.querySelectorAll('.tpl-card').forEach(function (card) {
+    card.addEventListener('click', function () {
+      if (!title.value.trim()) {
+        alert('اكتب اسم المنتج أولاً.');
+        title.focus();
+        return;
+      }
+      document.getElementById('tplChoice').value = card.dataset.key;
+      form.submit();
+    });
+  });
+})();
+</script>
+
+<hr style="margin:24px 0">
+<h3 class="sec-title">أو أنشئ صفحة فارغة</h3>
+<?php endif; ?>
 
 <?php if (!empty($product['id']) && !empty($product['slug'])): ?>
 <div class="page-actions">
-  <a class="btn" target="_blank" href="<?= base_url($product['slug'] . '?preview=1') ?>">👁 معاينة الصفحة في تبويب جديد</a>
+  <a class="btn" target="_blank" href="<?= base_url($product['slug'] . '?preview=1') ?>">👁 معاينة في تبويب جديد</a>
   <a class="btn ghost" href="<?= base_url('admin/products.php') ?>">← العودة للقائمة</a>
 </div>
 <?php endif; ?>
+<?php include __DIR__ . '/partials/live-preview.php'; ?>
 
 <form method="post" enctype="multipart/form-data" class="form-grid">
   <input type="hidden" name="_csrf" value="<?= e(csrf_token()) ?>">
@@ -118,18 +156,54 @@ $sectionsTemplate = '{
     <label>وصف SEO <input name="seo_description" value="<?= e($product['seo_description'] ?? '') ?>"></label>
   </div>
 
-  <div class="grp wide">
-    <details class="json-section">
-      <summary><strong>أقسام صفحة المنتج (JSON متقدم)</strong> — اضغط للتحرير اليدوي</summary>
-      <p class="hint">عدّل المحتوى البصري للصفحة (Hero / مميزات / آراء / FAQ). كن حذراً مع صياغة JSON.</p>
-      <textarea name="sections_json" rows="14" class="mono"><?= e($product['sections_json'] ?? $sectionsTemplate) ?></textarea>
-    </details>
+  <div class="grp wide px-picker">
+    <h3>التتبع والبكسلات</h3>
+    <p class="hint">
+      اختر البكسل الذي يستقبل أحداث <strong>هذه الصفحة</strong> فقط. هكذا يمكنك تشغيل إعلان ميتا بحساب،
+      وإعلان تيك توك بحساب آخر، لكل صفحة هبوط على حدة.
+      تُدار القائمة من <a href="<?= base_url('admin/pixels.php') ?>">صفحة البكسلات</a>.
+    </p>
+    <div class="row2">
+      <?php foreach ([
+            ['facebook', 'fb_pixel_id', 'بكسل Meta / Facebook'],
+            ['tiktok',   'tt_pixel_id', 'بكسل TikTok'],
+          ] as [$__platform, $__field, $__label]):
+        $__current = $product[$__field] ?? null;   // null = inherit, 0 = off, N = pixels.id
+        $__list    = $pixels[$__platform] ?? [];
+        $__default = null;
+        foreach ($__list as $__row) { if ($__row['is_default']) { $__default = $__row; break; } }
+      ?>
+      <label><?= e($__label) ?>
+        <select name="<?= e($__field) ?>">
+          <option value="" <?= $__current === null ? 'selected' : '' ?>>
+            افتراضي<?= $__default ? ' — ' . e($__default['name']) : ' (لا يوجد بكسل افتراضي)' ?>
+          </option>
+          <option value="0" <?= ($__current !== null && (int)$__current === 0) ? 'selected' : '' ?>>
+            بدون تتبع لهذه المنصة
+          </option>
+          <?php foreach ($__list as $__row): ?>
+            <option value="<?= (int)$__row['id'] ?>" <?= ((int)($__current ?? -1) === (int)$__row['id']) ? 'selected' : '' ?>>
+              <?= e($__row['name']) ?> — <?= e($__row['pixel_id']) ?><?= $__row['status'] ? '' : ' (موقوف)' ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <?php if (!$__list): ?>
+          <small>لم تُسجّل أي بكسل لهذه المنصة بعد — <a href="<?= base_url('admin/pixels.php') ?>">أضف واحداً</a>.</small>
+        <?php endif; ?>
+      </label>
+      <?php endforeach; ?>
+    </div>
   </div>
+
+  <?php include __DIR__ . '/partials/section-editor.php'; ?>
+
+  <?php include __DIR__ . '/partials/page-options.php'; ?>
 
   <div class="grp wide">
     <button class="btn-buy" type="submit">حفظ المنتج</button>
   </div>
 </form>
+<?php include __DIR__ . '/partials/unsaved-guard.php'; ?>
 
 <?php if ($product): ?>
 <hr style="margin:30px 0">
