@@ -1,0 +1,37 @@
+# Keep credentials, VCS history and dev-only helpers out of the image.
+#
+# Note what is NOT here: sql/. It must ship, because config/database.php
+# imports schema.sql + seed.sql the first time the admins table is missing.
+# uploads/ is gitignored, so the build context has no images to exclude anyway —
+# that directory is a volume mount point at runtime.
+
+.git
+.gitattributes
+.gitignore
+
+# Real credentials. config.prod.php is rendered at container start from the
+# environment instead; if it were copied in, an image layer would carry the
+# database password.
+config/config.local.php
+config/config.prod.php
+.env
+.env.*
+
+# Development-only diagnostic endpoint — not something to expose on a public
+# domain. Apache denies it as well, in case this file is ever edited.
+_diag.php
+
+# Build/deploy metadata the running container has no use for.
+Dockerfile
+.dockerignore
+docker-compose.yml
+Jenkinsfile
+DEPLOYMENT.md
+README.md
+
+*.log
+*.cache
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

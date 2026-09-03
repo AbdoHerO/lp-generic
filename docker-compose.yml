@@ -1,0 +1,99 @@
+# lp_tifaw — production stack.
+#
+# Run by Jenkins on the VPS. Values come from the .env file that the pipeline
+# writes from the CloudForge "Deployment Environment File" credential, except
+# HOST_PORT, which CloudForge owns as a build parameter and passes in the shell
+# environment (shell wins over .env in Compose).
+name: lp-tifaw
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lp-tifaw:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME: ${APP_NAME:-lp_tifaw}
+      APP_ENV: ${APP_ENV:-production}
+      # Empty on purpose — the site is served at the domain root.
+      APP_BASE_URL: ""
+      APP_TIMEZONE: ${APP_TIMEZONE:-Africa/Casablanca}
+      SESSION_NAME: ${SESSION_NAME:-LPTIFAW_SESS}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-lp_tifaw}
+      DB_USER: ${DB_USER:-lp_tifaw}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required — the .env file was not written}
+      DB_CHARSET: utf8mb4
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      TZ: ${APP_TIMEZONE:-Africa/Casablanca}
+    ports:
+      # 127.0.0.1 only. Nginx reaches it over loopback; nothing else can, and no
+      # firewall rule can change that. This is the port CloudForge calls the
+      # "application port" and writes into the Nginx upstream.
+      - "127.0.0.1:${HOST_PORT:-8090}:80"
+    volumes:
+      # Admin-uploaded product images. gitignored in the repo, so the volume is
+      # the only copy — back it up before destroying the stack.
+      - uploads:/var/www/html/uploads
+      - sessions:/var/lib/php/sessions
+    networks: [internal]
+    labels:
+      # Descriptive only. CloudForge ownership labels are deliberately not
+      # forged here: VPS Runtime should see this stack as unmanaged until it is
+      # adopted from that page, which is the documented and reversible path.
+      store.tujjar.app: lp-tifaw
+      store.tujjar.role: web
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  db:
+    # mysql:8.0 publishes linux/arm64/v8, so this works on the A1.Flex shape.
+    # mariadb:11 is a drop-in alternative for this schema if ever needed.
+    image: ${DB_IMAGE:-mysql:8.0}
+    restart: unless-stopped
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${DB_NAME:-lp_tifaw}
+      MYSQL_USER: ${DB_USER:-lp_tifaw}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      TZ: ${APP_TIMEZONE:-Africa/Casablanca}
+    volumes:
+      - dbdata:/var/lib/mysql
+    # No ports: MySQL stays private to the compose network. Nothing outside
+    # Docker, including the VPS itself, can reach it.
+    healthcheck:
+      test:
+        ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+    networks: [internal]
+    labels:
+      store.tujjar.app: lp-tifaw
+      store.tujjar.role: database
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  uploads:
+  sessions:
+  dbdata:
+
+networks:
+  internal:
+    driver: bridge
+    # Not `internal: true` — the app makes outbound HTTPS calls (the optional
+    # SheetDB lead sync), which an internal network would block silently.

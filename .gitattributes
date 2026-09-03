@@ -1,0 +1,32 @@
+# The repository is edited on Windows (core.autocrlf=true) and checked out on a
+# Linux VPS by Jenkins. A shell script that reaches the container with CRLF
+# endings fails as:
+#
+#   exec /usr/local/bin/lp-entrypoint: no such file or directory
+#
+# because the kernel reads "/bin/sh\r" as the interpreter path. Everything that
+# is executed or parsed inside the image is therefore pinned to LF, rather than
+# left to whatever the checking-out client happens to be configured for.
+* text=auto eol=lf
+
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+Jenkinsfile text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.php       text eol=lf
+*.sql       text eol=lf
+*.ini       text eol=lf
+*.conf      text eol=lf
+.htaccess   text eol=lf
+.env.example text eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.woff  binary
+*.woff2 binary
+*.ico  binary
