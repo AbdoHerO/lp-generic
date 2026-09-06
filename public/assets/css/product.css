@@ -57,6 +57,10 @@
    =========================================================== */
 .p-order { padding: 32px 12px 60px; background: #fafafa; }
 .lead-form {
+  /* A positioned ancestor, so an absolutely positioned descendant is contained
+     here instead of escaping to the initial containing block and expanding the
+     page. */
+  position: relative;
   background: #fff;
   border: 2px dashed var(--accent);
   border-radius: 18px;
@@ -252,11 +256,24 @@
 }
 .admin-preview-bar a { text-decoration: underline; margin-inline-start: 8px; }
 
-/* Honeypot. Off-screen rather than display:none — some bots skip hidden inputs
-   but happily fill anything still in the layout. Never focusable, never read. */
+/* Honeypot.
+   Hidden by clipping, NOT by moving it off-screen. The previous version used
+   `left:-9999px`, which broke the whole page: the element has no positioned
+   ancestor, so its containing block is the initial containing block — above
+   <body> — and body's overflow-x:hidden therefore could not clip it. In an RTL
+   document leftward overflow is the natural scroll direction, so the page grew
+   ~10,000px of scrollable width and opened scrolled into the empty part. The
+   result was a blank beige screen on mobile.
+
+   With no offsets the box stays at its static position inside the form, so it
+   cannot overflow anything in any writing mode. It is still in the layout and
+   still not display:none, which is what makes a form-filling bot type in it. */
 .hp-field{
-  position:absolute; left:-9999px; top:auto;
-  width:1px; height:1px; overflow:hidden;
+  position:absolute;
+  width:1px; height:1px;
+  padding:0; border:0;
+  overflow:hidden;
+  clip-path: inset(50%);
   opacity:0; pointer-events:none;
 }
 

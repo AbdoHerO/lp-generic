@@ -20,7 +20,16 @@
   --serif: 'Playfair Display', 'Cairo', serif;
 }
 *,*::before,*::after{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; max-width:100%; overflow-x:hidden; }
+html,body{ margin:0; padding:0; max-width:100%; }
+/* Horizontal overflow must never be reachable on a landing page: in RTL the
+   scroll origin sits on the right, so anything overflowing left opens the page
+   scrolled into empty space and the visitor sees a blank screen.
+   `clip` truly clips without making the element a scroll container, which
+   `hidden` does — and a scroll container is exactly what allowed the blank
+   screen. `hidden` stays first as the fallback for browsers without `clip`
+   (Safari < 16). */
+html,body{ overflow-x: hidden; }
+html,body{ overflow-x: clip; }
 body{
   font-family: var(--font);
   color: var(--ink);
