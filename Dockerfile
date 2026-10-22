@@ -3,7 +3,14 @@
 # php:8.2-apache is multi-arch, so this builds unchanged on the ARM (A1.Flex)
 # and x86 Oracle Cloud shapes. The image is built on the VPS by Jenkins, so it
 # is always native — there is no cross-build or QEMU step.
-FROM php:8.2-apache
+#
+# Pinned to the patch release, not the floating 8.2-apache tag: 8.2.35 fixes
+# CVE-2026-109618 / CVE-2026-109619 (unauthenticated RCE, worst under mod_php,
+# which is what this image runs). A pin makes the running version visible in
+# the repo and stops a stale cached layer from being deployed. Bump it for each
+# PHP security release; tests/deployment_test.php refuses anything older.
+# PHP 8.2 is end-of-life on 2026-12-31 — move to 8.3+ before then.
+FROM php:8.2.35-apache
 
 # pdo_mysql is the only extension the application actually misses: fileinfo
 # (admin_upload_image MIME checks), mbstring, session and json are bundled.

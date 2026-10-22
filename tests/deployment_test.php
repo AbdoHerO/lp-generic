@@ -102,6 +102,16 @@ foreach (['config/config.prod.php', 'config/config.local.php', '.env', 'tests/',
     check("image excludes $excluded", in_array($excluded, $ignoreLines, true));
 }
 
+// The base image is pinned to a patch release. 8.2.35 is the first 8.2 build
+// without CVE-2026-109618 / CVE-2026-109619 (unauthenticated RCE under mod_php).
+$dockerfile = file_get_contents($ROOT . '/Dockerfile');
+$fromOk = preg_match('/^FROM php:(\d+\.\d+\.\d+)-apache\b/m', $dockerfile, $fromM) === 1;
+check('Dockerfile pins php to a patch release', $fromOk, $fromOk ? $fromM[1] : 'FROM line is not php:X.Y.Z-apache');
+check('Dockerfile base is PHP >= 8.2.35', $fromOk && version_compare($fromM[1], '8.2.35', '>='),
+    $fromOk ? $fromM[1] : '');
+check('php.ini disables session upload progress',
+    str_contains(file_get_contents($ROOT . '/docker/php.ini'), 'session.upload_progress.enabled = 0'));
+
 // ── 3. Nothing sensitive is reachable over HTTP ────────────────────────────
 // .htaccess is the front door on XAMPP and Hostinger; the vhost is the second
 // lock in Docker. Both must cover the same paths.
