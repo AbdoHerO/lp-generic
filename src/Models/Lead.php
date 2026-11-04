@@ -33,7 +33,9 @@ class Lead {
     }
 
     public static function find(int $id): ?array {
-        $st = db()->prepare("SELECT * FROM leads WHERE id=:i LIMIT 1");
+        $st = db()->prepare("SELECT l.*, p.title AS product_title
+                             FROM leads l LEFT JOIN products p ON p.id = l.product_id
+                             WHERE l.id=:i LIMIT 1");
         $st->execute([':i' => $id]);
         $row = $st->fetch();
         return $row ?: null;
@@ -194,7 +196,7 @@ class Lead {
             'ville'        => $lead['city'] ?: '-',
             'adresse'      => $lead['address'],
             'prix'         => (string)$lead['total_price'],
-            'produit'      => 'Pant-' . $colorsString . '-' . $sizesString,
+            'produit'      => ($lead['product_title'] ?? $lead['product_slug']) . '-' . $colorsString . '-' . $sizesString,
             'id_intern'    => '',
             'change'       => '0',
             'ouvrir_colis' => '1',

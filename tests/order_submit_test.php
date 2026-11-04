@@ -53,6 +53,15 @@ check('the thank-you page will not re-fire it',
 check('the value sent is the server-recomputed price',
     strpos($ctrl, '$totalPrice = (float)$offer[\'total_price\'];') < strpos($ctrl, "'value'    => \$totalPrice"));
 
+// ── the Google Sheet row ───────────────────────────────────────────────────
+// The people shipping the order read this cell, so it must name what was ordered.
+$leadModel = file_get_contents($ROOT . '/src/Models/Lead.php');
+check('the Sheet names the real product',   str_contains($leadModel, "\$lead['product_title'] ?? \$lead['product_slug']"));
+check('no product is hard-coded as pants',  !str_contains($leadModel, "'Pant-'"));
+// The sync receives Lead::find()'s row, so that row has to carry the title.
+check('the order lookup joins the product title',
+    (bool)preg_match('/function find\(int \$id\).*?p\.title AS product_title.*?return \$row/s', $leadModel));
+
 // ── the browser side ───────────────────────────────────────────────────────
 check('the form submits over fetch',        str_contains($js, "fetch(form.action"));
 check('it flags the request as ajax',       str_contains($js, "data.append('ajax', '1')"));
